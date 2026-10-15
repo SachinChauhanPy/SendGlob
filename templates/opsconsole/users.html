@@ -1,0 +1,32 @@
+{% extends "opsconsole/base_ops.html" %}
+{% block title %}Users - Ops Console{% endblock %}
+{% block content %}
+<h1 class="h4 fw-bold mb-3">Users</h1>
+<form method="get" class="mb-3">
+    <div class="input-group input-group-sm" style="max-width:420px;">
+        <input class="form-control bg-body text-body border-secondary" name="q" value="{{ q }}" placeholder="Search by email">
+        <button class="btn btn-outline-secondary" type="submit">Search</button>
+    </div>
+</form>
+<div class="card bg-body border-secondary">
+    <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead><tr class="text-secondary small">
+                <th class="bg-body">Email</th><th class="bg-body">Joined</th><th class="bg-body">Status</th><th class="bg-body"></th>
+            </tr></thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td class="bg-body text-body small">{{ u.email }}</td>
+                    <td class="bg-body text-secondary small">{{ u.date_joined|date:"M j, Y" }}</td>
+                    <td class="bg-body small">{% if u.is_active %}<span class="badge text-bg-success">active</span>{% else %}<span class="badge text-bg-danger">suspended</span>{% endif %}{% if u.is_staff %} <span class="badge text-bg-secondary">staff</span>{% endif %}</td>
+                    <td class="bg-body small text-end"><a href="{% url 'opsconsole:user_detail' u.pk %}">Manage</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="bg-body text-secondary text-center py-4">No users match.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

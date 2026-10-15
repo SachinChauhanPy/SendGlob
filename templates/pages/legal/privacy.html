@@ -1,0 +1,86 @@
+{% extends "pages/legal/legal_base.html" %}
+{% block title %}Privacy Policy - SendGlob{% endblock %}
+{% block legal_title %}Privacy Policy{% endblock %}
+{% block legal_body %}
+
+<h2 class="h5 fw-bold mt-4 mb-2">1. Who is responsible</h2>
+<p>SendGlob is operated by {{ legal_name }} ("we"). For the personal data you
+provide about yourself, we are the controller. For personal data about your
+email recipients that you upload (see section 4), you are the controller and we
+process it only on your instructions.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">2. Data we collect</h2>
+<p>Account data: email address, password (stored hashed), optional name,
+organization, phone, country, and timezone. Billing data: billing name and
+address, payment records and receipts (card details are handled by Razorpay and
+never stored by us). Configuration data: your SMTP settings, with the app
+password encrypted at rest. Content you upload: email templates, document
+designs, recipient CSV files, and signature images (signature files are
+encrypted at rest). Usage data: campaign and delivery statistics, including
+open tracking, and standard technical logs (IP address, user agent). Contact
+messages you send us, including IP address and user agent for abuse
+prevention.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">3. Why we process it</h2>
+<p>To provide the Service (send campaigns, generate documents, track delivery);
+to process payments and maintain required financial records; to secure the
+Service (authentication, CAPTCHA, rate limiting, abuse prevention); to respond
+when you contact us; and to meet legal obligations. We process your data on the
+basis of our contract with you, our legitimate interests in securing and
+improving the Service, your consent where required, and legal compliance.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">4. Your recipients' data</h2>
+<p>Recipient lists you upload (names, email addresses, and any custom CSV
+columns) are processed solely to send your campaigns and generate your
+documents. We do not use recipient data for our own purposes, do not enrich it,
+and do not contact your recipients except on your instruction. You are
+responsible for having a lawful basis to contact them. Deleting a campaign or
+your account removes this data through the deletion cycle in section 7.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">5. Cookies</h2>
+<p>The Service uses only functional cookies: a session cookie to keep you signed
+in, a CSRF cookie to protect forms, and Cloudflare Turnstile cookies on
+protected forms. We do not use advertising or cross-site tracking cookies.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">6. Security measures</h2>
+<p>SMTP app passwords and signature files are encrypted at rest using
+industry-standard authenticated encryption, with encryption keys held
+separately from the data they protect. Generated documents and signatures are
+accessible only through your authenticated account. Access to operator tooling
+is restricted and operator actions are logged. The
+<a href="{% url 'pages:security' %}">Security page</a> describes these controls
+in detail.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">7. Retention and deletion</h2>
+<p>Deleted records become inaccessible immediately and are permanently removed
+after a retention window (90 days by default), with removals logged. Deleted
+signature images are removed from storage immediately. Financial records
+(payments, receipts, credit ledger) are retained as required for accounting and
+tax purposes.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">8. Sub-processors</h2>
+<p>We share data only with the providers needed to run the Service: Razorpay
+(payments), Google (optional sign-in with Google), AWS (hosting), and Cloudflare
+(Turnstile CAPTCHA). We do not sell personal data and do not share it with
+advertisers.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">9. International transfers</h2>
+<p>The Service is operated from {{ jurisdiction }} and hosted on AWS. If you use
+the Service from another country, your data will be transferred to and processed
+in the hosting region. We apply the same protections regardless of location.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">10. Your rights</h2>
+<p>You may access and correct your account data in the app, and request access,
+correction, export, or deletion of your personal data by contacting
+{{ contact_email }}. We will respond within a reasonable time and in accordance
+with applicable law.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">11. Children</h2>
+<p>The Service is not directed at children and may not be used by anyone under
+18.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">12. Changes</h2>
+<p>We will post updates to this policy on this page with a new effective date,
+and will highlight material changes.</p>
+
+{% endblock %}

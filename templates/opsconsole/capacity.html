@@ -1,0 +1,138 @@
+{% extends "opsconsole/base_ops.html" %}
+{% block title %}Capacity - Ops Console{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <h1 class="h4 fw-bold m-0">Capacity &amp; scaling</h1>
+    <div class="small text-secondary">
+        Instance:
+        <span class="badge text-bg-secondary">{{ identity.instance_type|default:"unknown" }}</span>
+        {% if spec %}<span class="text-secondary">{{ spec.vcpu }} vCPU / {{ spec.ram_gb }} GB</span>{% endif %}
+        {% if identity.source %}<span class="text-secondary">({{ identity.source }})</span>{% endif %}
+    </div>
+</div>
+
+{% if not has_data %}
+<div class="alert alert-secondary border-secondary" role="alert">
+    No metric snapshots yet. The collector runs every 5 minutes (Celery Beat). Once
+    it has sampled the host, current pressure, trends and recommendations appear here.
+</div>
+{% endif %}
+
+{% if active_alerts %}
+<div class="card bg-body border-danger mb-4">
+    <div class="card-header bg-body-tertiary fw-semibold text-danger">Active alerts</div>
+    <ul class="list-group list-group-flush">
+        {% for a in active_alerts %}
+        <li class="list-group-item bg-body d-flex justify-content-between align-items-center gap-2">
+            <div>
+                <span class="badge {% if a.level == 'critical' %}text-bg-danger{% else %}text-bg-warning{% endif %} text-uppercase">{{ a.level }}</span>
+                <span class="text-body ms-2">{{ a.message }}</span>
+                <span class="text-secondary small ms-2">{{ a.created_at|date:"M j, H:i" }}</span>
+            </div>
+            <form method="post" action="{% url 'opsconsole:acknowledge_alert' a.pk %}" class="m-0">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Acknowledge</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-7">
+        <div class="card bg-body border-secondary h-100">
+            <div class="card-header bg-body-tertiary fw-semibold">Recommendations</div>
+            <div class="card-body">
+                {% for r in recommendations %}
+                <div class="d-flex gap-3 py-2 {% if not forloop.last %}border-bottom border-secondary{% endif %}">
+                    <span class="badge {% if r.severity == 'critical' %}text-bg-danger{% else %}text-bg-warning{% endif %} align-self-start text-uppercase">{{ r.severity }}</span>
+                    <div>
+                        <div class="fw-semibold text-body">
+                            {{ r.resource }}
+                            <span class="text-secondary small">&middot; {{ r.lever }}</span>
+                            {% if r.target %}<span class="badge text-bg-secondary ms-1">{{ r.target }}</span>{% endif %}
+                        </div>
+                        <div class="text-secondary small">{{ r.detail }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-secondary small m-0">No scaling actions recommended. All monitored resources are within thresholds.</p>
+                {% endfor %}
+                <p class="text-secondary mt-3 mb-0" style="font-size:.72rem;">
+                    Recommendations are advisory only. The console never resizes anything automatically.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card bg-body border-secondary h-100">
+            <div class="card-header bg-body-tertiary fw-semibold">Lead time (projection)</div>
+            <div class="card-body">
+                {% for p in projections %}
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-secondary">{{ p.metric }} crosses {{ p.threshold|floatformat:0 }}%</span>
+                    <span class="text-body">~{{ p.days }} day{{ p.days|pluralize }}</span>
+                </div>
+                {% empty %}
+                <p class="text-secondary small m-0">Not enough trend history yet, or no metric is trending toward its threshold.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for c in charts %}
+    <div class="col-md-6">
+        <div class="card bg-body border-secondary">
+            <div class="card-header bg-body-tertiary fw-semibold d-flex justify-content-between">
+                <span>{{ c.label }} (24h)</span>
+                <span class="text-secondary small">latest: {{ c.latest|default_if_none:"-"|floatformat:1 }}{{ c.unit }}</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chart-{{ c.id }}" height="140"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    const charts = {{ charts_json|safe }};
+    const css = getComputedStyle(document.body);
+    const ink = css.getPropertyValue('--bs-body-color') || '#333';
+    const grid = css.getPropertyValue('--bs-border-color') || '#ccc';
+    charts.forEach(function (c) {
+        const el = document.getElementById('chart-' + c.id);
+        if (!el || !window.Chart) return;
+        const labels = c.series.map(p => p.t);
+        const data = c.series.map(p => p.v);
+        const ds = [{
+            label: c.label,
+            data: data,
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13,110,253,.12)',
+            fill: true, tension: .25, pointRadius: 0, borderWidth: 2,
+        }];
+        new Chart(el, {
+            type: 'line',
+            data: { labels: labels, datasets: ds },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: true, grid: { color: grid }, ticks: { color: ink } },
+                },
+            },
+        });
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Create Campaign - SendGlob{% endblock %}
+
+{% block content %}
+<div class="col-12 col-lg-10 mx-auto animated-fade-in">
+    <a href="{% url 'emails:campaign_list' %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to Campaigns
+    </a>
+    <h1 class="h3 fw-bold font-display m-0">New Bulk Campaign</h1>
+    <p class="text-secondary mb-4">Define campaign settings, map recipients, and attach materials</p>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger border-0 small py-2">
+                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+
+                <h2 class="h6 fw-bold font-display text-primary border-bottom pb-2 mb-3">
+                    <i data-lucide="settings" class="me-2"></i>Campaign Settings
+                </h2>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="{{ form.name.id_for_label }}" class="form-label small fw-semibold">Campaign Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.template.id_for_label }}" class="form-label small fw-semibold">Email Template</label>
+                        {{ form.template }}
+                        <div class="form-text small">Choose an HTML/Text template. <a href="{% url 'emails:template_create' %}" target="_blank" class="text-decoration-none">Create a new template <i data-lucide="external-link"></i></a></div>
+                        {% if form.template.errors %}<div class="text-danger small mt-1">{{ form.template.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.smtp_config.id_for_label }}" class="form-label small fw-semibold">Sending SMTP Account</label>
+                        {{ form.smtp_config }}
+                        <div class="form-text small">Emails will be sent from this account. Ensure it's active.</div>
+                        {% if form.smtp_config.errors %}<div class="text-danger small mt-1">{{ form.smtp_config.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <h2 class="h6 fw-bold font-display text-success border-bottom pb-2 mb-3 mt-5">
+                    <i data-lucide="users" class="me-2"></i>Recipients
+                </h2>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="{{ form.quick_recipients.id_for_label }}" class="form-label small fw-semibold">Quick Recipient List</label>
+                        {{ form.quick_recipients }}
+                        <div class="form-text small">{{ form.quick_recipients.help_text }}</div>
+                        {% if form.quick_recipients.errors %}<div class="text-danger small mt-1">{{ form.quick_recipients.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label for="{{ form.csv_file.id_for_label }}" class="form-label small fw-semibold">Upload CSV File</label>
+                        {{ form.csv_file }}
+                        <div class="form-text small">{{ form.csv_file.help_text }} Any extra CSV columns (e.g. <code>company</code>, <code>date</code>) become merge variables - e.g. <code>{% templatetag openvariable %} company {% templatetag closevariable %}</code>.</div>
+                        {% if form.csv_file.errors %}<div class="text-danger small mt-1">{{ form.csv_file.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <h2 class="h6 fw-bold font-display text-secondary border-bottom pb-2 mb-3 mt-5">
+                    <i data-lucide="paperclip" class="me-2"></i>Campaign Attachments
+                </h2>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="attachments" class="form-label small fw-semibold">Files to Attach</label>
+                        <input type="file" name="attachments" id="attachments" class="form-control" multiple>
+                        <div class="form-text small">Select one or more files (PDFs, images, documents) to attach to all outgoing emails.</div>
+                    </div>
+                </div>
+
+                <h2 class="h6 fw-bold font-display text-info border-bottom pb-2 mb-3 mt-5">
+                    <i data-lucide="calendar-clock" class="me-2"></i>Scheduling
+                    <span class="badge text-bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 ms-2">Optional</span>
+                </h2>
+                {% include "emails/_schedule_fields.html" %}
+
+                <div class="border-top mt-5 pt-4 text-end">
+                    <a href="{% url 'emails:campaign_list' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">Create Campaign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

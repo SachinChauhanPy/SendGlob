@@ -1,0 +1,163 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SendGlob - Modern Bulk Email System{% endblock %}</title>
+    {% block meta %}{% endblock %}
+
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon-16.png' %}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'img/favicon-192.png' %}">
+    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/favicon-180.png' %}">
+
+    <!-- Google Fonts: Ubuntu -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5.3.3 (latest) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- Minimal theme layer -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-body-tertiary">
+{% if impersonation %}
+<div class="ops-impersonation-banner w-100 text-center py-2 px-3 small fw-semibold" style="background:var(--bs-warning);color:#000;position:sticky;top:0;z-index:1080;">
+  Viewing as {{ impersonation.target_email }} (operator: {{ impersonation.operator_email }}). Read-only.
+  <form method="post" action="/ops/impersonate/stop/" class="d-inline m-0 ms-2">{% csrf_token %}
+    <button class="btn btn-sm btn-dark py-0" type="submit">Stop</button>
+  </form>
+</div>
+{% endif %}
+
+{% if user.is_authenticated %}
+    <!-- Mobile top bar -->
+    <nav class="navbar app-navbar d-lg-none sticky-top px-3">
+        <div class="container-fluid p-0">
+            <button class="btn btn-link text-body p-0 me-2 fs-4" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-controls="appSidebar">
+                <i data-lucide="menu"></i>
+            </button>
+            <span class="navbar-brand d-flex align-items-center gap-2 fw-bold font-display m-0">
+                <img src="{% static 'img/dashboard-icon.png' %}" alt="" width="28" height="28" class="brand-logo"> SendGlob
+            </span>
+            <button class="btn btn-outline-secondary border-0 theme-toggle ms-auto" type="button" title="Toggle theme">
+                <i data-lucide="moon"></i>
+            </button>
+        </div>
+    </nav>
+{% else %}
+    <!-- Guest theme toggle (hidden on the landing page, which provides its own
+         toggle in the sticky nav at z-index 50; this corner button would be
+         permanently buried behind it). -->
+    <div class="position-absolute top-0 end-0 p-3 guest-theme-toggle-wrapper" style="z-index: 5;">
+        <button class="btn btn-outline-secondary border-0 theme-toggle" type="button" title="Toggle theme">
+            <i data-lucide="moon"></i>
+        </button>
+    </div>
+{% endif %}
+
+<div class="{% if user.is_authenticated %}d-flex{% endif %}">
+
+    {% if user.is_authenticated %}
+    <!-- Sidebar: offcanvas below lg, persistent column at lg+ -->
+    <aside class="offcanvas-lg offcanvas-start app-sidebar bg-body border-end d-flex flex-column" tabindex="-1" id="appSidebar" aria-labelledby="appSidebarLabel">
+        <div class="offcanvas-header border-bottom d-lg-none">
+            <span class="offcanvas-title fw-bold font-display d-flex align-items-center gap-2" id="appSidebarLabel">
+                <img src="{% static 'img/dashboard-icon.png' %}" alt="" width="28" height="28" class="brand-logo"> SendGlob
+            </span>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#appSidebar" aria-label="Close"></button>
+        </div>
+
+        <div class="offcanvas-body d-flex flex-column p-3">
+            <!-- Brand (desktop) -->
+            <div class="sidebar-brand d-none d-lg-flex align-items-center gap-2 px-2 mb-4 mt-2">
+                <img src="{% static 'img/dashboard-icon.png' %}" alt="" width="36" height="36" class="brand-logo flex-shrink-0">
+                <span class="fs-5 fw-bold font-display text-primary sidebar-link-label">SendGlob</span>
+                <button id="sidebarCollapseBtn" class="btn border-0 ms-auto p-0 sidebar-collapse-btn d-none d-lg-flex align-items-center justify-content-center flex-shrink-0" type="button" title="Collapse sidebar" style="width:28px;height:28px;">
+                    <i data-lucide="panel-left-close"></i>
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="nav flex-column gap-1">
+                <a href="{% url 'emails:dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" title="Dashboard">
+                    <i data-lucide="gauge"></i><span class="sidebar-link-label"> Dashboard</span>
+                </a>
+                <a href="{% url 'accounts:smtp_list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'accounts' and 'smtp' in request.resolver_match.url_name %}active{% endif %}" title="SMTP Settings">
+                    <i data-lucide="sliders-horizontal"></i><span class="sidebar-link-label"> SMTP Settings</span>
+                </a>
+                <a href="{% url 'emails:template_list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'emails' and 'template' in request.resolver_match.url_name %}active{% endif %}" title="Email Templates">
+                    <i data-lucide="file-code"></i><span class="sidebar-link-label"> Email Templates</span>
+                </a>
+                <a href="{% url 'emails:campaign_list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'emails' and 'campaign' in request.resolver_match.url_name %}active{% endif %}" title="Bulk Campaigns">
+                    <i data-lucide="mails"></i><span class="sidebar-link-label"> Bulk Campaigns</span>
+                </a>
+                <a href="{% url 'documents:list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'documents' and 'signature' not in request.resolver_match.url_name %}active{% endif %}" title="Documents">
+                    <i data-lucide="files"></i><span class="sidebar-link-label"> Documents</span>
+                </a>
+                <a href="{% url 'documents:signature_list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'documents' and 'signature' in request.resolver_match.url_name %}active{% endif %}" title="Signatures">
+                    <i data-lucide="pen-tool"></i><span class="sidebar-link-label"> Signatures</span>
+                </a>
+                <a href="{% url 'billing:dashboard' %}" class="sidebar-link {% if request.resolver_match.namespace == 'billing' and request.resolver_match.url_name != 'profile' %}active{% endif %}" title="Billing &amp; Credits">
+                    <i data-lucide="credit-card"></i><span class="sidebar-link-label"> Billing{% if billing %} <span class="badge text-bg-secondary ms-1">{{ billing.balance }}</span>{% endif %}</span>
+                </a>
+                <a href="{% url 'billing:profile' %}" class="sidebar-link {% if request.resolver_match.namespace == 'billing' and request.resolver_match.url_name == 'profile' %}active{% endif %}" title="Profile">
+                    <i data-lucide="user"></i><span class="sidebar-link-label"> Profile</span>
+                </a>
+                <a href="{% url 'accounts:settings' %}" class="sidebar-link {% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name == 'settings' %}active{% endif %}" title="Settings">
+                    <i data-lucide="settings"></i><span class="sidebar-link-label"> Settings</span>
+                </a>
+            </nav>
+
+            <!-- Footer controls -->
+            <div class="mt-auto pt-3 border-top sidebar-footer">
+                <div class="d-flex align-items-center justify-content-between mb-2 px-2">
+                    <span class="small fw-semibold text-secondary text-truncate sidebar-link-label" style="max-width:150px;" title="{{ user.email }}">{{ user.email }}</span>
+                    <button class="btn btn-sm btn-outline-secondary border-0 theme-toggle" type="button" title="Toggle theme">
+                        <i data-lucide="moon"></i>
+                    </button>
+                </div>
+                <form action="{% url 'account_logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm w-100 btn-outline-danger d-flex align-items-center justify-content-center gap-2 sidebar-signout-btn" title="Sign Out">
+                        <i data-lucide="log-out"></i><span class="sidebar-link-label"> Sign Out</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </aside>
+    {% endif %}
+
+    <!-- Main content -->
+    <main class="{% block main_classes %}{% if user.is_authenticated %}flex-grow-1 p-3 p-md-4 p-lg-5 min-vh-100 d-flex flex-column{% else %}container py-4 py-md-5 min-vh-100 d-flex flex-column justify-content-center{% endif %}{% endblock %}" style="min-width: 0;">
+        <div class="{% if user.is_authenticated %}flex-grow-1{% endif %}">
+            {% block messages %}{% include "partials/messages.html" %}{% endblock %}
+            {% block content %}{% endblock %}
+        </div>
+        {% if user.is_authenticated %}
+        <footer class="mt-5 pt-3 border-top text-center text-md-start">
+            <p class="small text-secondary m-0">&copy; 2026 SendGlob. Bulk email &amp; document automation.</p>
+        </footer>
+        {% endif %}
+    </main>
+</div>
+
+{% block modals %}{% endblock %}
+
+<!-- Bootstrap 5.3.3 bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+<!-- Lucide icons (replaces Font Awesome) -->
+<script src="https://unpkg.com/lucide@1.17.0/dist/umd/lucide.min.js"></script>
+<script src="{% static 'js/app.js' %}"></script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

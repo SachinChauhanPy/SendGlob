@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}Verify Your Email | SendGlob{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center animated-fade-in">
+    <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5 text-center">
+                <div class="mb-4">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 text-primary mb-3" style="width: 64px; height: 64px;">
+                        <i data-lucide="send" class="fs-3"></i>
+                    </span>
+                    <h1 class="h3 fw-bold font-display mb-2">Check your inbox</h1>
+                    <p class="text-secondary small mb-0">We've sent a verification link to your email address</p>
+                </div>
+
+                <div class="my-4 p-3 bg-body-tertiary rounded-3 text-start border-start border-4 border-primary">
+                    <p class="small text-secondary mb-0">Please click the link inside the verification email to activate your account and gain access to your dashboard.</p>
+                </div>
+
+                <p class="small text-secondary mb-4">Didn't receive the email? Check your spam folder or wait a moment for the delivery.</p>
+
+                <a href="{% url 'account_login' %}" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+                    <i data-lucide="log-in"></i> Back to Sign In
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

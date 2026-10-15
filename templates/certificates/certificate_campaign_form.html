@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Deploy Certificate Campaign - SendGlob{% endblock %}
+
+{% block content %}
+<div class="col-12 col-lg-10 mx-auto animated-fade-in">
+    <a href="{% url 'emails:campaign_list' %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to Campaigns
+    </a>
+    <h1 class="h3 fw-bold font-display m-0">New Certificate Campaign</h1>
+    <p class="text-secondary mb-4">Select a layout template, map participant lists, and dispatch dynamic certificates</p>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger border-0 small py-2">
+                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+
+                <h2 class="h6 fw-bold font-display text-primary border-bottom pb-2 mb-3">
+                    <i data-lucide="award" class="me-2"></i>Certificate &amp; Mailing Settings
+                </h2>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="{{ form.campaign_name.id_for_label }}" class="form-label small fw-semibold">Campaign Name</label>
+                        {{ form.campaign_name }}
+                        {% if form.campaign_name.errors %}<div class="text-danger small mt-1">{{ form.campaign_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.certificate_template.id_for_label }}" class="form-label small fw-semibold">Certificate Design Template</label>
+                        {{ form.certificate_template }}
+                        <div class="form-text small">This design renders the name overlay.</div>
+                        {% if form.certificate_template.errors %}<div class="text-danger small mt-1">{{ form.certificate_template.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.smtp_config.id_for_label }}" class="form-label small fw-semibold">SMTP Sending Credentials</label>
+                        {{ form.smtp_config }}
+                        <div class="form-text small">The sender account from which all certificates are mailed.</div>
+                        {% if form.smtp_config.errors %}<div class="text-danger small mt-1">{{ form.smtp_config.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label for="{{ form.email_template.id_for_label }}" class="form-label small fw-semibold">Mailing Email Template</label>
+                        {{ form.email_template }}
+                        <div class="form-text small">The email content template. The generated certificate is attached as a PDF. You can reference <code>{% templatetag openvariable %} name {% templatetag closevariable %}</code> or other CSV columns.</div>
+                        {% if form.email_template.errors %}<div class="text-danger small mt-1">{{ form.email_template.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <h2 class="h6 fw-bold font-display text-success border-bottom pb-2 mb-3 mt-5">
+                    <i data-lucide="file-spreadsheet" class="me-2"></i>Participants Roster
+                </h2>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="{{ form.csv_file.id_for_label }}" class="form-label small fw-semibold">Participants CSV File</label>
+                        {{ form.csv_file }}
+                        <div class="form-text small">Include column headers with at least <code>email</code> and <code>name</code>. Each participant's <code>name</code> is centered and written onto the certificate template.</div>
+                        {% if form.csv_file.errors %}<div class="text-danger small mt-1">{{ form.csv_file.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <div class="p-3 bg-body-tertiary rounded-3 border d-flex align-items-start gap-3">
+                            <div class="form-check m-0">
+                                {{ form.auto_send }}
+                            </div>
+                            <div>
+                                <label class="form-check-label small fw-semibold text-secondary" for="{{ form.auto_send.id_for_label }}">
+                                    Automatically queue and dispatch certificate emails right after generation
+                                </label>
+                                <div class="form-text small mt-1">If checked, the background worker starts sending as soon as certificates are built. If unchecked, they're saved as drafts.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-top mt-5 pt-4 text-end">
+                    <a href="{% url 'emails:campaign_list' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">Generate &amp; Send Certificates</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

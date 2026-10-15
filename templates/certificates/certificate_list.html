@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Certificates - SendGlob{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 animated-fade-in">
+    <div class="col-12 col-md-7">
+        <h1 class="h3 fw-bold font-display m-0">Certificate Templates</h1>
+        <p class="text-secondary mb-0">Design, coordinate-align, and map templates for automated name rendering</p>
+    </div>
+    <div class="col-12 col-md-5 text-md-end mt-3 mt-md-0">
+        <div class="d-flex justify-content-md-end gap-2">
+            <a href="{% url 'certificates:create' %}" class="btn btn-outline-primary">
+                <i data-lucide="plus" class="me-2"></i> Add Template
+            </a>
+            <a href="{% url 'certificates:campaign_create' %}" class="btn btn-success">
+                <i data-lucide="award" class="me-2"></i> Run Cert Campaign
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="animated-fade-in">
+    {% if templates %}
+        <div class="row g-4">
+            {% for template in templates %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+                    <div class="position-relative bg-body-tertiary border-bottom" style="height: 180px;">
+                        <img src="{% url 'certificates:preview' template.id %}" class="w-100 h-100 object-fit-cover" alt="{{ template.name }} preview">
+                        <span class="position-absolute bottom-0 end-0 m-2 badge text-bg-dark bg-opacity-75">Live Coordinates Preview</span>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="h5 fw-bold font-display text-truncate m-0">{{ template.name }}</h2>
+                        <hr class="my-3 opacity-25">
+                        <div class="row text-secondary small g-2">
+                            <div class="col-6"><i data-lucide="move-horizontal" class="me-2 text-primary"></i>X: <strong>{{ template.x_start }}-{{ template.x_end }}</strong></div>
+                            <div class="col-6"><i data-lucide="chevrons-up-down" class="me-2 text-primary"></i>Y: <strong>{{ template.y_coordinate }}</strong></div>
+                            <div class="col-6"><i data-lucide="type" class="me-2 text-primary"></i>Size: <strong>{{ template.font_size }}px</strong></div>
+                            <div class="col-6 text-truncate">
+                                <i data-lucide="palette" class="me-2 text-primary"></i>
+                                <span class="d-inline-block border rounded-circle align-middle me-1" style="width:14px;height:14px;background-color:{{ template.font_color }};"></span>
+                                <strong>{{ template.font_color }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top d-flex justify-content-between align-items-center">
+                        <span class="small text-secondary">Uploaded {{ template.created_at|date:"M d, Y" }}</span>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'certificates:edit' template.id %}" class="btn btn-sm btn-outline-primary" title="Edit template & bounding box">
+                                <i data-lucide="square-pen"></i>
+                            </a>
+                            <form action="{% url 'certificates:delete' template.id %}" method="post" onsubmit="return confirm('Are you sure you want to delete this certificate template?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete template">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center p-5">
+                <i data-lucide="award" class="text-secondary opacity-50 mb-3" style="font-size:2.5rem;"></i>
+                <h2 class="h4 fw-bold font-display">No certificate templates</h2>
+                <p class="text-secondary mx-auto" style="max-width: 460px;">Upload a certificate layout image (JPG/PNG), configure the name baseline coordinates, and center participant names automatically.</p>
+                <a href="{% url 'certificates:create' %}" class="btn btn-primary mt-2">
+                    <i data-lucide="plus" class="me-2"></i> Add Certificate Template
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

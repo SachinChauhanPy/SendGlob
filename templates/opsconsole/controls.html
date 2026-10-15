@@ -1,0 +1,66 @@
+{% extends "opsconsole/base_ops.html" %}
+{% block title %}Controls - Ops Console{% endblock %}
+{% block content %}
+<h1 class="h4 fw-bold mb-2">Global controls</h1>
+<p class="text-secondary small mb-4">Runtime switches honored by the workers without a redeploy. Every change requires a reason and is audit-logged.</p>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card bg-body border-secondary h-100">
+            <div class="card-header bg-body-tertiary fw-semibold d-flex justify-content-between">
+                <span>Send kill switch</span>
+                <span class="badge {% if send_paused %}text-bg-danger{% else %}text-bg-success{% endif %}">{% if send_paused %}PAUSED{% else %}active{% endif %}</span>
+            </div>
+            <div class="card-body">
+                <p class="small text-secondary">When on, all outbound delivery and document generation stop immediately. Pending recipients are preserved.</p>
+                <form method="post" action="{% url 'opsconsole:toggle_flag' 'global_send_paused' %}" onsubmit="return confirm('Toggle the global send kill switch?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="enabled" value="{% if send_paused %}off{% else %}on{% endif %}">
+                    <input class="form-control form-control-sm mb-2 bg-body text-body border-secondary" name="reason" placeholder="Reason (required)" required>
+                    <button class="btn btn-sm {% if send_paused %}btn-success{% else %}btn-danger{% endif %}" type="submit">
+                        {% if send_paused %}Resume sending{% else %}Pause all sending{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card bg-body border-secondary h-100">
+            <div class="card-header bg-body-tertiary fw-semibold d-flex justify-content-between">
+                <span>Maintenance mode</span>
+                <span class="badge {% if maintenance %}text-bg-warning{% else %}text-bg-success{% endif %}">{% if maintenance %}ON{% else %}off{% endif %}</span>
+            </div>
+            <div class="card-body">
+                <p class="small text-secondary">When on, non-staff users can read but cannot make changes; they see a friendly page.</p>
+                <form method="post" action="{% url 'opsconsole:toggle_flag' 'maintenance_mode' %}" onsubmit="return confirm('Toggle maintenance mode?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="enabled" value="{% if maintenance %}off{% else %}on{% endif %}">
+                    <input class="form-control form-control-sm mb-2 bg-body text-body border-secondary" name="reason" placeholder="Reason (required)" required>
+                    <button class="btn btn-sm {% if maintenance %}btn-success{% else %}btn-warning{% endif %}" type="submit">
+                        {% if maintenance %}Turn off maintenance{% else %}Enable maintenance{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card bg-body border-secondary">
+            <div class="card-header bg-body-tertiary fw-semibold">Send throttle override</div>
+            <div class="card-body">
+                <p class="small text-secondary">Inter-send delay in seconds. Leave blank to clear and use the default.</p>
+                <form method="post" action="{% url 'opsconsole:set_throttle' %}">
+                    {% csrf_token %}
+                    <div class="input-group input-group-sm mb-2">
+                        <input class="form-control bg-body text-body border-secondary" name="seconds" value="{{ throttle }}" placeholder="e.g. 3.0">
+                        <span class="input-group-text">sec</span>
+                    </div>
+                    <input class="form-control form-control-sm mb-2 bg-body text-body border-secondary" name="reason" placeholder="Reason (required)" required>
+                    <button class="btn btn-sm btn-outline-secondary" type="submit">Apply throttle</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

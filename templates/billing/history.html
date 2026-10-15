@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Billing history - SendGlob{% endblock %}
+{% block content %}
+<h1 class="h4 fw-bold mb-3">History &amp; receipts</h1>
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card bg-body border-secondary">
+            <div class="card-header bg-body-tertiary fw-semibold">Credit transactions</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead><tr class="text-secondary small"><th class="bg-body">When</th><th class="bg-body">Type</th><th class="bg-body">Amount</th><th class="bg-body">Balance</th></tr></thead>
+                    <tbody>
+                        {% for t in txns %}
+                        <tr><td class="bg-body small text-body">{{ t.created_at|date:"M j, Y H:i" }}</td>
+                            <td class="bg-body small">{{ t.get_transaction_type_display }}{% if t.note %}<div class="text-secondary">{{ t.note }}</div>{% endif %}</td>
+                            <td class="bg-body small {% if t.amount < 0 %}text-danger{% else %}text-success{% endif %}">{{ t.amount }}</td>
+                            <td class="bg-body small text-body">{{ t.balance_after }}</td></tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="bg-body text-secondary text-center py-3 small">No transactions yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if txns.has_other_pages %}
+            <div class="card-footer bg-body d-flex justify-content-between align-items-center small">
+                {% if txns.has_previous %}<a href="?page={{ txns.previous_page_number }}">&larr; Newer</a>{% else %}<span></span>{% endif %}
+                <span class="text-secondary">Page {{ txns.number }} of {{ txns.paginator.num_pages }}</span>
+                {% if txns.has_next %}<a href="?page={{ txns.next_page_number }}">Older &rarr;</a>{% else %}<span></span>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card bg-body border-secondary">
+            <div class="card-header bg-body-tertiary fw-semibold">Payments</div>
+            <ul class="list-group list-group-flush">
+                {% for p in payments %}
+                <li class="list-group-item bg-body small">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-body">{{ p.description|default:p.get_payment_type_display }}</span>
+                        <span class="text-body fw-semibold">{{ p.amount }} {{ p.currency }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-secondary">
+                        <span>{{ p.paid_at|default:p.created_at|date:"M j, Y" }} &middot;
+                            <span class="badge {% if p.status == 'captured' %}text-bg-success{% elif p.status == 'failed' %}text-bg-danger{% else %}text-bg-secondary{% endif %}">{{ p.get_status_display }}</span></span>
+                        {% if p.receipt %}<a href="{% url 'billing:receipt_download' p.receipt.pk %}">Receipt {{ p.receipt.number }}</a>{% endif %}
+                    </div>
+                </li>
+                {% empty %}
+                <li class="list-group-item bg-body text-secondary small">No payments yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

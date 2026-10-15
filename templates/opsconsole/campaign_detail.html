@@ -1,0 +1,46 @@
+{% extends "opsconsole/base_ops.html" %}
+{% block title %}{{ campaign.name }} - Ops Console{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h4 fw-bold m-0">{{ campaign.name }}</h1>
+    <a href="{% url 'opsconsole:campaigns' %}" class="small">&larr; All campaigns</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card bg-body border-secondary">
+            <div class="card-header bg-body-tertiary fw-semibold">Overview</div>
+            <div class="card-body small">
+                <div class="d-flex justify-content-between py-1"><span class="text-secondary">Owner</span><span class="text-body">{{ campaign.user.email }}</span></div>
+                <div class="d-flex justify-content-between py-1"><span class="text-secondary">Status</span><span><span class="badge text-bg-secondary">{{ campaign.get_status_display }}</span>{% if campaign.deleted_at %} <span class="badge text-bg-danger">deleted</span>{% endif %}</span></div>
+                <div class="d-flex justify-content-between py-1"><span class="text-secondary">Recipients</span><span class="text-body">{{ recipient_total }}</span></div>
+                <div class="d-flex justify-content-between py-1"><span class="text-secondary">Sent / Failed / Pending</span><span class="text-body">{{ sent }} / {{ failed }} / {{ pending }}</span></div>
+                <div class="d-flex justify-content-between py-1"><span class="text-secondary">Document campaign</span><span class="text-body">{{ campaign.is_document_campaign|yesno:"yes,no" }}</span></div>
+                <div class="d-flex justify-content-between py-1"><span class="text-secondary">Created</span><span class="text-body">{{ campaign.created_at|date:"M j, Y H:i" }}</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card bg-body border-secondary">
+            <div class="card-header bg-body-tertiary fw-semibold">Control</div>
+            <div class="card-body">
+                <form method="post" action="{% url 'opsconsole:campaign_action' campaign.pk 'cancel' %}" class="mb-3"
+                      onsubmit="return confirm('Cancel this campaign?');">
+                    {% csrf_token %}
+                    <input class="form-control form-control-sm mb-2 bg-body text-body border-secondary" name="reason" placeholder="Reason (required)" required>
+                    <button class="btn btn-sm btn-outline-danger w-100" type="submit">Cancel (stop sending)</button>
+                    <div class="form-text small">Valid from queued / sending / scheduled.</div>
+                </form>
+                <form method="post" action="{% url 'opsconsole:campaign_action' campaign.pk 'requeue' %}"
+                      onsubmit="return confirm('Requeue this campaign for sending?');">
+                    {% csrf_token %}
+                    <input class="form-control form-control-sm mb-2 bg-body text-body border-secondary" name="reason" placeholder="Reason (required)" required>
+                    <button class="btn btn-sm btn-outline-primary w-100" type="submit">Requeue (resume sending)</button>
+                    <div class="form-text small">Valid from failed / cancelled.</div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

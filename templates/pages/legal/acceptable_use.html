@@ -1,0 +1,50 @@
+{% extends "pages/legal/legal_base.html" %}
+{% block title %}Acceptable Use &amp; Anti-Spam Policy - SendGlob{% endblock %}
+{% block legal_title %}Acceptable Use &amp; Anti-Spam Policy{% endblock %}
+{% block legal_body %}
+
+<p>SendGlob sends email from your own account, so your behaviour directly
+affects your own sender reputation and the deliverability of every SendGlob
+user. This policy is deliberately strict.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">1. Consent is mandatory</h2>
+<p>You may only send to recipients who have given you consent to be contacted,
+or with whom you have an existing relationship that lawfully permits the
+message (for example, participants of your event receiving their
+certificates). Purchased, rented, scraped, or harvested lists are prohibited.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">2. No unsolicited bulk email</h2>
+<p>Unsolicited bulk email (spam) is prohibited regardless of content. Every
+bulk message must be one the recipient would reasonably expect to receive from
+you.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">3. Prohibited content</h2>
+<p>You must not send content that is illegal in your jurisdiction or your
+recipients'; deceptive or fraudulent, including phishing and impersonation;
+malware or links to malware; sexually explicit material; or content that
+harasses or incites violence. Sender identity and subject lines must not be
+misleading.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">4. Respect provider and destination policies</h2>
+<p>You must comply with your email provider's sending limits and bulk-sender
+rules (for example Gmail program policies) and with the policies of recipient
+domains. SendGlob's throttling helps you stay within limits, but the
+responsibility is yours.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">5. Honour opt-outs</h2>
+<p>If a recipient asks to stop receiving your messages, you must remove them
+from your lists before your next send.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">6. Enforcement</h2>
+<p>We review abuse signals and reports. Violations can lead to warnings,
+suspension, or termination of your account through our operations console,
+depending on severity. Egregious abuse (phishing, malware, fraud) results in
+immediate termination and, where appropriate, reports to the relevant
+providers or authorities.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">7. Reporting abuse</h2>
+<p>To report abuse involving a SendGlob user, contact {{ contact_email }} or
+use the <a href="{% url 'pages:contact' %}">contact form</a>. Include the
+message headers where possible.</p>
+
+{% endblock %}

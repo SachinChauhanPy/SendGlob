@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - SendGlob{% endblock %}
+
+{% block extra_css %}
+<!-- CodeMirror CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/fullscreen.min.css">
+<style>
+    .CodeMirror {
+        height: 480px;
+        border-radius: 12px;
+        font-family: 'Fira Code', 'Courier New', Courier, monospace;
+        font-size: 14px;
+        border: 1px solid var(--bs-border-color);
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075);
+    }
+    .CodeMirror-focused {
+        border-color: #0078D4;
+        box-shadow: 0 0 0 0.2rem rgba(0, 120, 212, 0.18);
+    }
+    .CodeMirror-fullscreen {
+        border-radius: 0 !important;
+        border: none !important;
+        z-index: 1050 !important; /* ensure it stays on top of sticky navigation elements */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4 animated-fade-in">
+    <a href="{% url 'emails:template_list' %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to Templates
+    </a>
+    <h1 class="h3 fw-bold font-display m-0">{{ title }}</h1>
+    <p class="text-secondary mb-0">Pick a design, replace the content, and watch it update live. AI can draft the copy for you.</p>
+</div>
+
+<form method="POST" id="template-form">
+    {% csrf_token %}
+    <div class="row g-4 animated-fade-in">
+
+        <!-- ================= BUILDER ================= -->
+        <div class="col-12 col-xl-7">
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger border-0 small py-2">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+            {% endif %}
+
+            <!-- Basics -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h6 fw-bold font-display mb-3">Template basics</h2>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.name.id_for_label }}" class="form-label small fw-semibold">Template name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.subject.id_for_label }}" class="form-label small fw-semibold">Subject line</label>
+                            {{ form.subject }}
+                            {% if form.subject.errors %}<div class="text-danger small mt-1">{{ form.subject.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design picker -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h6 fw-bold font-display mb-3">Choose a design</h2>
+                    <div class="row g-2">
+                        {% for opt in layouts %}
+                        <div class="col-12 col-sm-6 col-lg-4">
+                            <input type="radio" class="btn-check layout-radio" name="layout" id="layout_{{ opt.key }}" value="{{ opt.key }}" autocomplete="off" {% if form.layout.value == opt.key %}checked{% endif %}>
+                            <label class="btn btn-outline-secondary w-100 h-100 text-start p-3 rounded-4 d-flex flex-column" for="layout_{{ opt.key }}">
+                                <span class="d-flex align-items-center gap-2 fw-semibold mb-1"><i data-lucide="{{ opt.icon }}" class="text-primary"></i>{{ opt.label }}</span>
+                                <span class="small text-secondary" style="font-size:.74rem;line-height:1.35;">{{ opt.description }}</span>
+                            </label>
+                        </div>
+                        {% endfor %}
+                        <div class="col-12 col-sm-6 col-lg-4">
+                            <input type="radio" class="btn-check layout-radio" name="layout" id="layout_custom" value="custom" autocomplete="off" {% if form.layout.value == 'custom' %}checked{% endif %}>
+                            <label class="btn btn-outline-secondary w-100 h-100 text-start p-3 rounded-4 d-flex flex-column" for="layout_custom">
+                                <span class="d-flex align-items-center gap-2 fw-semibold mb-1"><i data-lucide="code" class="text-primary"></i>Custom HTML</span>
+                                <span class="small text-secondary" style="font-size:.74rem;line-height:1.35;">Paste your own full HTML email. Advanced.</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Branding -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4" id="branding-card">
+                <div class="card-body p-4">
+                    <h2 class="h6 fw-bold font-display mb-3">Branding</h2>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-auto">
+                            <label for="id_brand_color" class="form-label small fw-semibold">Brand color</label>
+                            <div class="d-flex align-items-center gap-2">
+                                {{ form.brand_color }}
+                                <span id="brand-color-hex" class="small fw-semibold text-secondary">#0078D4</span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <label for="{{ form.logo_url.id_for_label }}" class="form-label small fw-semibold">Logo URL <span class="text-secondary fw-normal">(optional)</span></label>
+                            {{ form.logo_url }}
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label for="{{ form.logo_size.id_for_label }}" class="form-label small fw-semibold">Logo height <span class="text-secondary fw-normal">(px)</span></label>
+                            <div class="input-group">
+                                {{ form.logo_size }}
+                                <span class="input-group-text small" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">px</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4" id="content-card">
+                <div class="card-body p-4">
+                    <h2 class="h6 fw-bold font-display mb-1">Content</h2>
+                    <p class="text-secondary small mb-3"><i data-lucide="info" class="me-1"></i>Everything here is optional - leave any field blank to leave it out of the email.</p>
+
+                    <div class="builder-field mb-3" data-field="preheader">
+                        <label for="{{ form.preheader.id_for_label }}" class="form-label small fw-semibold">Preheader</label>
+                        {{ form.preheader }}
+                    </div>
+                    <div class="builder-field mb-3" data-field="subheading">
+                        <label for="{{ form.subheading.id_for_label }}" class="form-label small fw-semibold">Label / sub-headline</label>
+                        {{ form.subheading }}
+                    </div>
+                    <div class="builder-field mb-3" data-field="heading">
+                        <label for="{{ form.heading.id_for_label }}" class="form-label small fw-semibold">Heading</label>
+                        {{ form.heading }}
+                    </div>
+                    <div class="builder-field mb-3" data-field="image_url">
+                        <label for="{{ form.image_url.id_for_label }}" class="form-label small fw-semibold">Hero image URL</label>
+                        {{ form.image_url }}
+                    </div>
+                    <div class="builder-field mb-3" data-field="body">
+                        <label for="{{ form.body.id_for_label }}" class="form-label small fw-semibold">Body</label>
+                        {{ form.body }}
+                        <div class="form-text small">Separate paragraphs with a blank line. Use <code>{% templatetag openvariable %} name {% templatetag closevariable %}</code> for personalization.</div>
+                    </div>
+                    <div class="builder-field mb-3" data-field="event_details">
+                        <label for="{{ form.event_details.id_for_label }}" class="form-label small fw-semibold">Event details</label>
+                        {{ form.event_details }}
+                        <div class="form-text small">One detail per line (Date, Time, Location…).</div>
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" role="switch" id="toggle-button">
+                        <label class="form-check-label small fw-semibold" for="toggle-button">Include a call-to-action button</label>
+                    </div>
+                    <div class="row g-3" id="button-fields">
+                        <div class="col-md-6 builder-field" data-field="button_text">
+                            <label for="{{ form.button_text.id_for_label }}" class="form-label small fw-semibold">Button text</label>
+                            {{ form.button_text }}
+                        </div>
+                        <div class="col-md-6 builder-field" data-field="button_url">
+                            <label for="{{ form.button_url.id_for_label }}" class="form-label small fw-semibold">Button URL</label>
+                            {{ form.button_url }}
+                        </div>
+                    </div>
+                    <div class="builder-field mt-3" data-field="footer">
+                        <label for="{{ form.footer.id_for_label }}" class="form-label small fw-semibold">Footer</label>
+                        {{ form.footer }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom HTML (only for the custom layout) -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 d-none" id="custom-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h2 class="h6 fw-bold font-display m-0">Custom HTML</h2>
+                        <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" id="btn-code-fullscreen" title="Toggle Full Screen">
+                            <i data-lucide="maximize"></i> <span class="small">Full Screen</span>
+                        </button>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.custom_html.id_for_label }}" class="form-label small fw-semibold">HTML body</label>
+                        <div id="editor-wrapper">
+                            {{ form.custom_html }}
+                        </div>
+                        <div class="form-text small">Full HTML email. Merge tags like <code>{% templatetag openvariable %} name {% templatetag closevariable %}</code> are supported.</div>
+                    </div>
+                    <div>
+                        <label for="{{ form.custom_text.id_for_label }}" class="form-label small fw-semibold">Plain-text fallback</label>
+                        {{ form.custom_text }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI assistant -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 border-top border-4 border-primary" id="ai-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i data-lucide="wand-sparkles" class="text-primary"></i>
+                        <h2 class="h6 fw-bold font-display m-0">Draft with AI</h2>
+                    </div>
+                    <p class="text-secondary small">Describe the email and AI fills the content fields for the selected design. Review and tweak before saving.</p>
+                    <textarea class="form-control mb-2" id="ai-prompt" rows="3" placeholder="e.g. A friendly email inviting past attendees to our June web-dev workshop; mention free certificate; warm tone."></textarea>
+                    <div id="ai-error" class="alert alert-danger border-0 d-none small py-2"></div>
+                    <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" id="btn-generate-ai">
+                        <i data-lucide="wand-sparkles"></i> <span class="btn-label">Generate content</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 pb-2">
+                <a href="{% url 'emails:template_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary px-4"><i data-lucide="save" class="me-2"></i>Save Template</button>
+            </div>
+        </div>
+
+        <!-- ================= LIVE PREVIEW ================= -->
+        <div class="col-12 col-xl-5">
+            <div class="sticky-xl-top" style="top: 1.5rem;">
+                <div class="preview-card-wrapper">
+                    <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                        <span class="small fw-bold font-display"><i data-lucide="eye" class="me-1 text-primary"></i>Live preview</span>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Preview settings">
+                            <button type="button" class="btn btn-outline-secondary active" id="btn-desktop" title="Desktop"><i data-lucide="monitor"></i></button>
+                            <button type="button" class="btn btn-outline-secondary" id="btn-mobile" title="Mobile"><i data-lucide="smartphone"></i></button>
+                            <button type="button" class="btn btn-outline-secondary" id="btn-fullscreen" title="Full Screen"><i data-lucide="maximize"></i></button>
+                        </div>
+                    </div>
+                    <div class="preview-frame-container d-flex justify-content-center overflow-auto rounded-4" style="min-height: 60vh; background:#f2f4f7;">
+                        <iframe id="preview-frame" title="Email preview"
+                                style="width:100%;max-width:100%;height:60vh;border:0;background:transparent;transition:width .3s ease;flex-shrink:0;"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Code Editor Floating Exit Full Screen Button -->
+<button type="button" class="btn btn-sm btn-secondary position-fixed shadow-sm d-none align-items-center gap-1" id="btn-code-exit-fullscreen" style="top: 15px; right: 25px; z-index: 999999;">
+    <i data-lucide="minimize"></i> <span>Exit Full Screen</span>
+</button>
+{% endblock %}
+
+{% block extra_js %}
+<!-- CodeMirror JS and modes -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/fullscreen.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closetag.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/keymap/sublime.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form        = document.getElementById('template-form');
+    const previewUrl  = "{% url 'emails:template_preview' %}";
+    const aiUrl       = "{% url 'emails:template_generate_ai' %}";
+    const frame       = document.getElementById('preview-frame');
+    const csrftoken   = form.querySelector('[name=csrfmiddlewaretoken]').value;
+    let htmlEditor    = null;
+
+    // Which content fields each layout uses (preheader/body/footer always shown).
+    const LAYOUT_FIELDS = {{ layouts_fields_json|safe }};
+    const ALWAYS = ['preheader', 'body', 'footer'];
+
+    const contentCard = document.getElementById('content-card');
+    const customCard  = document.getElementById('custom-card');
+    const brandingCard= document.getElementById('branding-card');
+    const aiCard      = document.getElementById('ai-card');
+    const brandInput  = document.getElementById('id_brand_color');
+    const brandHex    = document.getElementById('brand-color-hex');
+
+    // Initialize CodeMirror editor
+    const htmlTextarea = document.getElementById('id_custom_html');
+    const btnCodeFullscreen = document.getElementById('btn-code-fullscreen');
+    const btnCodeExitFullscreen = document.getElementById('btn-code-exit-fullscreen');
+    const editorWrapper = document.getElementById('editor-wrapper');
+
+    function toggleFullscreen() {
+        if (!htmlEditor || !editorWrapper) return;
+        const isFullscreen = !htmlEditor.getOption('fullScreen');
+        const cmWrapper = htmlEditor.getWrapperElement();
+
+        const text = btnCodeFullscreen ? btnCodeFullscreen.querySelector('span') : null;
+
+        if (isFullscreen) {
+            document.body.appendChild(cmWrapper);
+            htmlEditor.setOption('fullScreen', true);
+            setIcon(btnCodeFullscreen, 'minimize');
+            if (text) text.textContent = 'Exit Full Screen';
+            if (btnCodeFullscreen) btnCodeFullscreen.classList.add('active');
+            if (btnCodeExitFullscreen) {
+                btnCodeExitFullscreen.classList.remove('d-none');
+                btnCodeExitFullscreen.classList.add('d-inline-flex');
+            }
+        } else {
+            editorWrapper.appendChild(cmWrapper);
+            htmlEditor.setOption('fullScreen', false);
+            setIcon(btnCodeFullscreen, 'maximize');
+            if (text) text.textContent = 'Full Screen';
+            if (btnCodeFullscreen) btnCodeFullscreen.classList.remove('active');
+            if (btnCodeExitFullscreen) {
+                btnCodeExitFullscreen.classList.remove('d-inline-flex');
+                btnCodeExitFullscreen.classList.add('d-none');
+            }
+        }
+
+        setTimeout(() => {
+            htmlEditor.refresh();
+            htmlEditor.focus();
+        }, 50);
+    }
+
+    if (htmlTextarea) {
+        htmlEditor = CodeMirror.fromTextArea(htmlTextarea, {
+            mode: 'htmlmixed',
+            theme: 'dracula',
+            keyMap: 'sublime',
+            autoCloseTags: true,
+            autoCloseBrackets: true,
+            lineNumbers: true,
+            tabSize: 4,
+            indentUnit: 4,
+            lineWrapping: true,
+            extraKeys: {
+                "F11": function(cm) {
+                    toggleFullscreen();
+                },
+                "Esc": function(cm) {
+                    if (cm.getOption("fullScreen")) {
+                        toggleFullscreen();
+                    }
+                }
+            }
+        });
+
+        htmlEditor.on('change', () => {
+            htmlEditor.save();
+            schedulePreview();
+        });
+
+        if (btnCodeFullscreen) {
+            btnCodeFullscreen.addEventListener('click', toggleFullscreen);
+        }
+        if (btnCodeExitFullscreen) {
+            btnCodeExitFullscreen.addEventListener('click', toggleFullscreen);
+        }
+    }
+
+    function selectedLayout() {
+        const r = form.querySelector('input[name="layout"]:checked');
+        return r ? r.value : 'simple';
+    }
+
+    function applyLayoutVisibility() {
+        const layout = selectedLayout();
+        const isCustom = layout === 'custom';
+        contentCard.classList.toggle('d-none', isCustom);
+        brandingCard.classList.toggle('d-none', isCustom);
+        aiCard.classList.toggle('d-none', isCustom);
+        customCard.classList.toggle('d-none', !isCustom);
+
+        if (!isCustom) {
+            const fields = (LAYOUT_FIELDS[layout] || []).concat(ALWAYS);
+            document.querySelectorAll('.builder-field').forEach((el) => {
+                const f = el.getAttribute('data-field');
+                el.classList.toggle('d-none', !fields.includes(f));
+            });
+        } else if (htmlEditor) {
+            setTimeout(() => {
+                htmlEditor.refresh();
+            }, 50);
+        }
+    }
+
+    // ---- Live preview (debounced) ----
+    let timer = null;
+    function refreshPreview() {
+        const fd = new FormData(form);
+        fetch(previewUrl, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: fd })
+            .then((r) => r.text())
+            .then((html) => { frame.srcdoc = html; })
+            .catch(() => {});
+    }
+    function schedulePreview() {
+        clearTimeout(timer);
+        timer = setTimeout(refreshPreview, 350);
+    }
+
+    // Update on any input/change in the form
+    form.addEventListener('input', (e) => {
+        if (e.target && e.target.id === 'ai-prompt') return; // prompt doesn't affect preview
+        if (e.target === brandInput && brandHex) brandHex.textContent = brandInput.value;
+        schedulePreview();
+    });
+    form.addEventListener('change', (e) => {
+        if (e.target.classList && e.target.classList.contains('layout-radio')) {
+            applyLayoutVisibility();
+        }
+        schedulePreview();
+    });
+
+    if (brandInput && brandHex) brandHex.textContent = brandInput.value || '#0078D4';
+
+    // ---- Preview width toggle (realistic email client widths) ----
+    const btnDesktop = document.getElementById('btn-desktop');
+    const btnMobile  = document.getElementById('btn-mobile');
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const wrapper = document.querySelector('.preview-card-wrapper');
+
+    // Desktop button = fill the preview pane (simulates a wide email-client reading pane).
+    //   The email's 600px white card centers itself via the outer table's align="center"
+    //   and the surrounding gray gutter shows naturally - same as Gmail/Outlook on a wide screen.
+    // Mobile button = 380px iframe, which triggers the email's @media (max-width:480px) rule
+    //   and renders the responsive mobile layout.
+    btnDesktop.addEventListener('click', () => {
+        frame.style.width = '600px';
+        btnDesktop.classList.add('active');
+        btnMobile.classList.remove('active');
+    });
+
+    btnMobile.addEventListener('click', () => {
+        frame.style.width = '380px';
+        btnMobile.classList.add('active');
+        btnDesktop.classList.remove('active');
+    });
+
+    const originalParent = wrapper.parentNode;
+    const originalNextSibling = wrapper.nextSibling;
+
+    // Match the iframe's height to its content so it never shows an inner
+    // scrollbar in fullscreen. The outer overlay scrolls instead.
+    function syncFrameHeightToContent() {
+        try {
+            const doc = frame.contentDocument;
+            if (!doc || !doc.body) return;
+            const h = Math.max(
+                doc.body.scrollHeight,
+                doc.documentElement ? doc.documentElement.scrollHeight : 0
+            );
+            if (h > 0) frame.style.height = h + 'px';
+        } catch (e) { /* cross-origin or not yet loaded */ }
+    }
+    function resetFrameHeight() {
+        frame.style.height = '60vh';
+    }
+    // Whenever the iframe finishes loading new srcdoc content, resync if fullscreen.
+    frame.addEventListener('load', () => {
+        if (wrapper.classList.contains('fullscreen')) syncFrameHeightToContent();
+    });
+
+    btnFullscreen.addEventListener('click', () => {
+        const isFullscreen = !wrapper.classList.contains('fullscreen');
+        if (isFullscreen) {
+            // Move wrapper to body to escape any CSS transform/sticky containing blocks
+            document.body.appendChild(wrapper);
+            wrapper.classList.add('fullscreen');
+            setIcon(btnFullscreen, 'minimize');
+            btnFullscreen.setAttribute('title', 'Exit Full Screen');
+            document.body.style.overflow = 'hidden';
+            syncFrameHeightToContent();
+        } else {
+            // Restore wrapper to its original position in the DOM
+            originalParent.insertBefore(wrapper, originalNextSibling);
+            wrapper.classList.remove('fullscreen');
+            setIcon(btnFullscreen, 'maximize');
+            btnFullscreen.setAttribute('title', 'Full Screen');
+            document.body.style.overflow = '';
+            resetFrameHeight();
+        }
+    });
+
+    // Initial state: Desktop mode = iframe width at 600px (standard email client width).
+    frame.style.width = '600px';
+
+    // ---- AI generation ----
+    const btnAI    = document.getElementById('btn-generate-ai');
+    const aiPrompt = document.getElementById('ai-prompt');
+    const aiError  = document.getElementById('ai-error');
+    const aiLabel  = btnAI.querySelector('.btn-label');
+
+    function setField(id, val) {
+        const el = document.getElementById(id);
+        if (el && typeof val === 'string') el.value = val;
+    }
+
+    btnAI.addEventListener('click', () => {
+        const prompt = aiPrompt.value.trim();
+        if (!prompt) { aiError.textContent = 'Describe the email you want first.'; aiError.classList.remove('d-none'); return; }
+        aiError.classList.add('d-none');
+        btnAI.disabled = true;
+        aiLabel.textContent = 'Generating…';
+
+        fetch(aiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+            body: JSON.stringify({ prompt, layout: selectedLayout(), brand_color: (brandInput ? brandInput.value : '#0078D4') })
+        })
+        .then((r) => r.json().then((d) => { if (!r.ok || !d.success) throw new Error(d.error || 'Generation failed'); return d; }))
+        .then((d) => {
+            if (d.subject)      setField('id_subject', d.subject);
+            setField('id_preheader', d.preheader);
+            setField('id_heading', d.heading);
+            setField('id_subheading', d.subheading);
+            setField('id_body', d.body);
+            setField('id_button_text', d.button_text);
+            if (d.button_url) setField('id_button_url', d.button_url);
+            setField('id_event_details', d.event_details);
+            if (d.image_url) setField('id_image_url', d.image_url);
+            setField('id_footer', d.footer);
+            refreshPreview();
+        })
+        .catch((err) => { aiError.textContent = err.message; aiError.classList.remove('d-none'); })
+        .finally(() => { btnAI.disabled = false; aiLabel.textContent = 'Generate content'; });
+    });
+
+    // ---- Optional button toggle ----
+    const toggleBtn   = document.getElementById('toggle-button');
+    const buttonRow   = document.getElementById('button-fields');
+    const btnTextEl   = document.getElementById('id_button_text');
+    const btnUrlEl    = document.getElementById('id_button_url');
+
+    function applyButtonToggleState(silent) {
+        const on = toggleBtn.checked;
+        buttonRow.classList.toggle('d-none', !on);
+        if (!on) {
+            // Clear so the renderer omits the button block.
+            if (btnTextEl) btnTextEl.value = '';
+            if (btnUrlEl)  btnUrlEl.value  = '';
+        }
+        if (!silent) refreshPreview();
+    }
+
+    // Initial state: button "on" only if there's actually button text to render.
+    toggleBtn.checked = !!(btnTextEl && btnTextEl.value.trim());
+    applyButtonToggleState(true);
+    toggleBtn.addEventListener('change', () => applyButtonToggleState(false));
+    // If the user starts typing text while toggle is off, flip the toggle on automatically.
+    if (btnTextEl) btnTextEl.addEventListener('input', () => { if (btnTextEl.value && !toggleBtn.checked) { toggleBtn.checked = true; applyButtonToggleState(true); } });
+
+    // ---- Init ----
+    applyLayoutVisibility();
+    refreshPreview();
+});
+</script>
+{% endblock %}

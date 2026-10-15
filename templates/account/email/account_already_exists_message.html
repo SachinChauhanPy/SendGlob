@@ -1,0 +1,78 @@
+{% extends "account/email/_base_email.html" %}
+
+{% block email_title %}Account already exists | SendGlob{% endblock %}
+
+{% block header_icon %}&#128100;{% endblock %}
+{% block header_title %}Account already registered{% endblock %}
+
+{% block card_body %}
+<p style="margin:0 0 20px;color:#4a5568;font-size:15px;line-height:1.7;">
+  Someone (hopefully you) tried to create a new <strong style="color:#0078D4;">SendGlob</strong>
+  account using <strong style="color:#1e293b;">{{ email }}</strong>, but an account with this
+  address already exists.
+</p>
+
+<!-- Two action paths -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="margin-bottom:8px;">
+  <tr>
+    <!-- Sign in path -->
+    <td width="48%" valign="top"
+        style="padding:18px;background-color:#f0f7ff;border-radius:12px;
+               border:1px solid #cce1f7;">
+      <p style="margin:0 0 6px;color:#0078D4;font-size:13px;font-weight:700;">
+        Already have an account?
+      </p>
+      <p style="margin:0 0 14px;color:#4a5568;font-size:13px;line-height:1.5;">
+        Sign in with your existing password to access your dashboard.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="border-radius:8px;
+                     background:linear-gradient(135deg,#0078D4 0%,#00A4EF 100%);">
+            <a href="https://{{ current_site.domain }}/accounts/login/"
+               target="_blank"
+               style="display:inline-block;padding:10px 22px;font-size:13px;
+                      font-weight:700;color:#fff;text-decoration:none;border-radius:8px;">
+              Sign in
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+
+    <td width="4%"></td>
+
+    <!-- Forgot password path -->
+    <td width="48%" valign="top"
+        style="padding:18px;background-color:#f9f9f9;border-radius:12px;
+               border:1px solid #e2e8f0;">
+      <p style="margin:0 0 6px;color:#4a5568;font-size:13px;font-weight:700;">
+        Forgot your password?
+      </p>
+      <p style="margin:0 0 14px;color:#4a5568;font-size:13px;line-height:1.5;">
+        Reset it to regain access to your account in seconds.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="border-radius:8px;border:1px solid #d0d7e2;">
+            <a href="{{ password_reset_url }}"
+               target="_blank"
+               style="display:inline-block;padding:10px 22px;font-size:13px;
+                      font-weight:700;color:#4a5568;text-decoration:none;border-radius:8px;">
+              Reset password
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+{% endblock %}
+
+{% block card_note %}
+<p style="margin:0;color:#8a9ab5;font-size:12px;line-height:1.6;">
+  If you didn't try to create an account, someone may have entered your email
+  by mistake. No account was created and no action is needed.
+</p>
+{% endblock %}

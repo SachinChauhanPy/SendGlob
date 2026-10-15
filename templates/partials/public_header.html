@@ -1,0 +1,29 @@
+{% load static %}
+{% comment %}
+Marketing header shared by every public page (landing, pricing, about,
+security, legal, contact). Requires static/css/public.css. Auth-aware:
+guests get Sign in / Get started, signed-in users get a Dashboard link.
+{% endcomment %}
+<nav class="landing-nav">
+    <div class="container py-3 d-flex align-items-center justify-content-between">
+        <a href="{% url 'landing' %}" class="d-flex align-items-center gap-2 text-decoration-none">
+            <img src="{% static 'img/dashboard-icon.png' %}" alt="" width="40" height="40" class="brand-logo">
+            <span class="brand-text fw-bold font-display fs-5">SendGlob</span>
+        </a>
+        <div class="d-flex align-items-center gap-2 gap-md-3">
+            <a href="{% url 'landing' %}#features" class="nav-anchor d-none d-md-inline text-decoration-none small fw-semibold">Features</a>
+            <a href="{% url 'pages:pricing' %}" class="nav-anchor d-none d-md-inline text-decoration-none small fw-semibold">Pricing</a>
+            <a href="{% url 'pages:about' %}" class="nav-anchor d-none d-md-inline text-decoration-none small fw-semibold">About</a>
+            <a href="{% url 'pages:security' %}" class="nav-anchor d-none d-md-inline text-decoration-none small fw-semibold">Security</a>
+            <button class="btn btn-sm theme-toggle" type="button" title="Toggle dark mode">
+                <i data-lucide="moon"></i>
+            </button>
+            {% if user.is_authenticated %}
+            <a href="{% url 'emails:dashboard' %}" class="btn btn-sm fw-semibold px-3 btn-nav-cta">Dashboard <i data-lucide="arrow-right" class="ms-1"></i></a>
+            {% else %}
+            <a href="{% url 'account_login' %}" class="btn btn-link btn-sm text-decoration-none fw-semibold btn-nav-signin">Sign in</a>
+            <a href="{% url 'account_signup' %}" class="btn btn-sm fw-semibold px-3 btn-nav-cta">Get started <i data-lucide="arrow-right" class="ms-1"></i></a>
+            {% endif %}
+        </div>
+    </div>
+</nav>

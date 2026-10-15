@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - SendGlob{% endblock %}
+
+{% block content %}
+<div class="col-12 col-md-9 col-lg-8 mx-auto animated-fade-in">
+    <a href="{% url 'accounts:smtp_list' %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to SMTP
+    </a>
+    <h1 class="h3 fw-bold font-display m-0">{{ title }}</h1>
+    <p class="text-secondary mb-4">Connect any SMTP provider — Gmail, Yahoo, Outlook, or your own mail server</p>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+            <form method="POST">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger border-0 small py-2">
+                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="{{ form.name.id_for_label }}" class="form-label small fw-semibold">Configuration Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <label for="{{ form.smtp_host.id_for_label }}" class="form-label small fw-semibold">SMTP Host</label>
+                        {{ form.smtp_host }}
+                        {% if form.smtp_host.errors %}<div class="text-danger small mt-1">{{ form.smtp_host.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.smtp_port.id_for_label }}" class="form-label small fw-semibold">SMTP Port</label>
+                        {{ form.smtp_port }}
+                        {% if form.smtp_port.errors %}<div class="text-danger small mt-1">{{ form.smtp_port.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label for="{{ form.smtp_username.id_for_label }}" class="form-label small fw-semibold">Sender Email Address</label>
+                        {{ form.smtp_username }}
+                        {% if form.smtp_username.errors %}<div class="text-danger small mt-1">{{ form.smtp_username.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label for="{{ form.app_password.id_for_label }}" class="form-label small fw-semibold">Password / App Password</label>
+                        {{ form.app_password }}
+                        <div class="form-text small">{{ form.app_password.help_text }}</div>
+                        {% if form.app_password.errors %}<div class="text-danger small mt-1">{{ form.app_password.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12 d-flex flex-column gap-2 mt-3">
+                        <div class="form-check">
+                            {{ form.use_tls }}
+                            <label class="form-check-label small fw-medium text-secondary" for="{{ form.use_tls.id_for_label }}">
+                                Use secure TLS connection (recommended — port 587 for most providers)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label small fw-medium text-secondary" for="{{ form.is_active.id_for_label }}">
+                                Set as active connection (only one connection can be active at a time)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-top mt-4 pt-4 text-end">
+                    <a href="{% url 'accounts:smtp_list' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">Save Settings</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Billing profile - SendGlob{% endblock %}
+{% block content %}
+<h1 class="h4 fw-bold mb-3">Billing profile</h1>
+<p class="text-secondary small" style="max-width:640px;">These details are copied onto each receipt when a payment is made. Editing them later does not change receipts already issued.</p>
+<form method="post" style="max-width:640px;" novalidate>
+    {% csrf_token %}
+    <div class="row g-3">
+        {% for field in identity_form %}
+        <div class="col-md-6">
+            <label class="form-label small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for err in field.errors %}<div class="small text-danger">{{ err }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <div class="col-12"><hr class="border-secondary"><div class="fw-semibold text-body mb-2">Billing address</div></div>
+        {% for field in address_form %}
+        <div class="{% if field.name == 'address_line1' or field.name == 'address_line2' %}col-12{% elif field.name == 'city' or field.name == 'state' or field.name == 'postal_code' %}col-md-4{% else %}col-md-6{% endif %}">
+            <label class="form-label small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for err in field.errors %}<div class="small text-danger">{{ err }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    <button class="btn btn-primary mt-3" type="submit">Save</button>
+</form>
+{% endblock %}

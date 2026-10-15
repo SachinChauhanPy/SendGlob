@@ -1,0 +1,66 @@
+{% extends "base_public.html" %}
+{% block title %}About - SendGlob{% endblock %}
+{% block meta_description %}Why SendGlob exists: one dashboard for bulk email and signed certificates, sent from your own account, built and operated by an independent developer.{% endblock %}
+{% block public_content %}
+<div class="container py-5" style="max-width: 760px;">
+    <span class="section-eyebrow">About</span>
+    <h1 class="section-headline mb-4">Why SendGlob exists</h1>
+
+    <p class="text-body">
+        SendGlob started with a simple frustration: running one workshop should not
+        require four subscriptions. Teams stitch together a bulk email service, a
+        certificate design tool, a CSV cleaner, and an automation glue layer, then
+        spend their evenings debugging the seams between them.
+    </p>
+    <p class="text-body">
+        SendGlob puts the whole workflow in one dashboard. You connect your own
+        SMTP account (Gmail, Yahoo, Outlook, or any provider), upload a recipient
+        CSV, pick or AI-draft an email template, and optionally generate
+        personalised, signature-stamped certificate PDFs rendered from your own
+        design. Sending is paced automatically with retries built in, and
+        progress is tracked live.
+    </p>
+
+    <h2 class="h4 fw-bold font-display mt-5 mb-3">What we believe</h2>
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="trust-tile">
+                <div class="icon"><i data-lucide="mail"></i></div>
+                <h3 class="h6 fw-bold font-display mb-1">Your reputation is yours</h3>
+                <p class="small text-secondary mb-0">Mail goes out through your own account, never a shared IP pool.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="trust-tile">
+                <div class="icon"><i data-lucide="key-round"></i></div>
+                <h3 class="h6 fw-bold font-display mb-1">Your data is yours</h3>
+                <p class="small text-secondary mb-0">Your credentials and files are encrypted, private to your account, and permanently removed when you delete them.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="trust-tile">
+                <div class="icon"><i data-lucide="badge-check"></i></div>
+                <h3 class="h6 fw-bold font-display mb-1">Pricing should be honest</h3>
+                <p class="small text-secondary mb-0">Email delivery is free; credits are spent only when a document is generated.</p>
+            </div>
+        </div>
+    </div>
+    <p class="text-body">
+        The <a href="{% url 'pages:security' %}">Security page</a> documents each of
+        these claims against what is actually built, and nothing on this site
+        describes a feature that has not shipped.
+    </p>
+
+    <h2 class="h4 fw-bold font-display mt-5 mb-3">Who is behind it</h2>
+    <p class="text-body">
+        SendGlob is built and operated by an independent developer, run lean and
+        self-funded. Decisions are made close to the product, support replies come
+        from the person who wrote the code, and there is no pressure to paper over
+        gaps with marketing. What is on this site is what is in the product.
+    </p>
+    <p class="text-body mb-5">
+        Questions, feedback, or a use case we should hear about?
+        <a href="{% url 'pages:contact' %}">Get in touch</a>.
+    </p>
+</div>
+{% endblock %}

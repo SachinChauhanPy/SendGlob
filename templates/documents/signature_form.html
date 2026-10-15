@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="animated-fade-in" style="max-width: 640px;">
+    <a href="{% url 'documents:signature_list' %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to Signatures
+    </a>
+    <h1 class="h3 fw-bold font-display m-0">{{ title }}</h1>
+    <p class="text-secondary mb-3">Upload a photo or scan of the signature.</p>
+
+    <div class="alert alert-info border-0 shadow-sm rounded-4 mb-4" role="alert">
+        <div class="d-flex">
+            <i data-lucide="lightbulb" class="me-2 mt-1 flex-shrink-0"></i>
+            <div class="small">
+                <strong>Upload a handwritten signature on a plain page.</strong>
+                For the cleanest result use dark ink, good lighting, and crop close to the
+                signature. If any stray marks or lines remain, wipe them with <strong>Edit / Touch up</strong>.
+                <div class="mt-2 text-secondary">
+                    Photos and selfies (anything without a plain paper background) are rejected automatically.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                {% if form.non_field_errors %}<div class="alert alert-danger small py-2">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="mb-3">
+                    <label for="{{ form.name.id_for_label }}" class="form-label small fw-semibold">Name</label>
+                    {{ form.name }}
+                    <p class="form-text small mb-0">A CSV cell with this value will place this signature on a document.</p>
+                    {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.original_image.id_for_label }}" class="form-label small fw-semibold">Signature Image</label>
+                    {{ form.original_image }}
+                    {% if form.original_image.errors %}<div class="text-danger small mt-1">{{ form.original_image.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12 col-sm-6">
+                        <label for="{{ form.ink_color_mode.id_for_label }}" class="form-label small fw-semibold">Ink Color</label>
+                        {{ form.ink_color_mode }}
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <label for="{{ form.ink_color.id_for_label }}" class="form-label small fw-semibold">Single color (if selected)</label>
+                        <div class="input-group">
+                            <input type="color" class="form-control form-control-color" id="ink-color-picker" value="#000000" title="Pick color">
+                            {{ form.ink_color }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <a href="{% url 'documents:signature_list' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+            <button type="submit" class="btn btn-primary px-4">Upload &amp; Process</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const picker = document.getElementById('ink-color-picker');
+    const hex = document.querySelector('input[name="ink_color"]');
+    const isHex = v => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test((v || '').trim());
+    if (picker && hex) {
+        if (isHex(hex.value)) picker.value = hex.value;
+        picker.addEventListener('input', () => { hex.value = picker.value; });
+        hex.addEventListener('input', () => { if (isHex(hex.value)) picker.value = hex.value; });
+    }
+});
+</script>
+{% endblock %}

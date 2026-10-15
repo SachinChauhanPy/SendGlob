@@ -1,0 +1,35 @@
+{% extends "opsconsole/base_ops.html" %}
+{% block title %}Activity - Ops Console{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h1 class="h4 fw-bold m-0">Activity monitor</h1>
+    <div class="btn-group btn-group-sm">
+        <a href="{% url 'opsconsole:activity' %}" class="btn {% if not kind %}btn-secondary{% else %}btn-outline-secondary{% endif %}">All</a>
+        {% for k in kinds %}
+        <a href="?kind={{ k }}" class="btn {% if kind == k %}btn-secondary{% else %}btn-outline-secondary{% endif %} text-capitalize">{{ k }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card bg-body border-secondary">
+    <ul class="list-group list-group-flush">
+        {% for item in feed %}
+        <li class="list-group-item bg-body d-flex gap-3 align-items-start">
+            <i data-lucide="{{ item.icon }}" class="text-secondary mt-1" style="width:18px;height:18px;"></i>
+            <div class="flex-grow-1 min-w-0">
+                <div class="text-body">{{ item.summary }}</div>
+                <div class="text-secondary small">
+                    {{ item.when|date:"M j, Y H:i" }}
+                    {% if item.actor %} &middot; {{ item.actor }}{% endif %}
+                    <span class="badge text-bg-secondary text-capitalize ms-1">{{ item.kind }}</span>
+                </div>
+            </div>
+            {% if item.url %}<a href="{{ item.url }}" class="small align-self-center">View</a>{% endif %}
+        </li>
+        {% empty %}
+        <li class="list-group-item bg-body text-secondary text-center py-4">No activity matches this filter.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

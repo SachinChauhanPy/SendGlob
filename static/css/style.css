@@ -1,0 +1,649 @@
+/* ============================================================
+   emailOPS - Minimal theme layer
+   Bootstrap 5.3 does the heavy lifting. This file only covers
+   things Bootstrap utilities genuinely cannot express:
+     1. Microsoft Store four-colour palette mapping
+     2. Display font + base font family
+     3. Sidebar link hover / active states
+     4. Two small keyframe animations
+     5. A couple of helper utilities Bootstrap lacks
+   No component styling, no glassmorphism, no layout hacks.
+   ============================================================ */
+
+/* ---- 1. Microsoft Store palette → Bootstrap theme variables ----
+   Remapping the *-rgb variables recolours text-*, bg-*, border-*,
+   and all bg-opacity subtle utilities automatically.            */
+:root {
+  --bs-primary:  #0078D4;   --bs-primary-rgb:  0, 120, 212;   /* MS blue   */
+  --bs-success:  #7FBA00;   --bs-success-rgb:  127, 186, 0;   /* MS green  */
+  --bs-warning:  #FFB900;   --bs-warning-rgb:  255, 185, 0;   /* MS amber  */
+  --bs-danger:   #F25022;   --bs-danger-rgb:   242, 80, 34;   /* MS red    */
+  --bs-info:     #00A4EF;   --bs-info-rgb:     0, 164, 239;   /* MS cyan   */
+  --bs-link-color:       #0078D4;
+  --bs-link-color-rgb:   0, 120, 212;
+  --bs-link-hover-color: #005A9E;
+}
+
+/* Buttons compile their colours from hardcoded Sass values, so the
+   four solid variants need their --bs-btn-* tokens pointed at the palette. */
+.btn-primary {
+  --bs-btn-bg: #0078D4;            --bs-btn-border-color: #0078D4;
+  --bs-btn-hover-bg: #106EBE;      --bs-btn-hover-border-color: #106EBE;
+  --bs-btn-active-bg: #005A9E;     --bs-btn-active-border-color: #005A9E;
+  --bs-btn-disabled-bg: #0078D4;   --bs-btn-disabled-border-color: #0078D4;
+}
+.btn-outline-primary {
+  --bs-btn-color: #0078D4;         --bs-btn-border-color: #0078D4;
+  --bs-btn-hover-bg: #0078D4;      --bs-btn-hover-border-color: #0078D4;
+  --bs-btn-active-bg: #005A9E;     --bs-btn-active-border-color: #005A9E;
+}
+.btn-success {
+  --bs-btn-bg: #7FBA00;            --bs-btn-border-color: #7FBA00;
+  --bs-btn-hover-bg: #6ba100;      --bs-btn-hover-border-color: #6ba100;
+  --bs-btn-active-bg: #5c8a00;     --bs-btn-active-border-color: #5c8a00;
+}
+.btn-warning {
+  --bs-btn-bg: #FFB900;            --bs-btn-border-color: #FFB900;
+  --bs-btn-hover-bg: #e6a700;      --bs-btn-hover-border-color: #e6a700;
+}
+.btn-danger {
+  --bs-btn-bg: #F25022;            --bs-btn-border-color: #F25022;
+  --bs-btn-hover-bg: #d8410f;      --bs-btn-hover-border-color: #d8410f;
+}
+.btn-info {
+  --bs-btn-bg: #00A4EF;            --bs-btn-border-color: #00A4EF;
+  --bs-btn-color: #fff;            --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #0090d4;      --bs-btn-hover-border-color: #0090d4;
+}
+
+/* Tie focus rings to the palette */
+:root { --bs-focus-ring-color: rgba(0, 120, 212, 0.25); }
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  border-color: #0078D4;
+  box-shadow: 0 0 0 0.2rem rgba(0, 120, 212, 0.18);
+}
+.form-check-input:checked {
+  background-color: #0078D4;
+  border-color: #0078D4;
+}
+
+/* ---- 2. Typography ---- */
+body { font-family: 'Ubuntu', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+.font-display { font-family: 'Ubuntu', sans-serif; font-weight: 700; letter-spacing: -0.01em; }
+
+/* ---- Lucide icons: render inline at the surrounding font-size, like the
+   icon-font they replaced (default Lucide SVGs are a fixed 24px). ---- */
+.lucide {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  flex-shrink: 0;
+}
+
+/* ---- 3. Sidebar link states (hover/active need real CSS) ---- */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.5rem;
+  color: var(--bs-secondary-color);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.sidebar-link:hover {
+  background-color: rgba(var(--bs-primary-rgb), 0.08);
+  color: var(--bs-primary);
+}
+.sidebar-link.active {
+  background-color: rgba(var(--bs-primary-rgb), 0.12);
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+.sidebar-link svg { width: 1.1rem; height: 1.1rem; }
+
+/* Persistent desktop sidebar.
+   `!important` is required here because Bootstrap's `.offcanvas-lg` ships with
+   `width: auto !important; height: auto !important;` at the lg breakpoint,
+   which would otherwise wipe out the fixed 264×100vh dimensions and let the
+   sidebar stretch to match the main column's full content height (instead of
+   staying sticky-pinned at the viewport top). `align-self: flex-start` and
+   `flex: 0 0 auto` defeat the parent `.d-flex`'s default `align-items: stretch`,
+   which is the second half of the same problem. */
+@media (min-width: 992px) {
+  .app-sidebar {
+    width: 264px !important;
+    min-width: 264px !important;
+    max-width: 264px !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    position: sticky !important;
+    top: 0 !important;
+    flex: 0 0 264px !important;
+    align-self: flex-start !important;
+    overflow-y: auto;
+    /* Smooth collapse/expand */
+    transition: width 0.22s ease, min-width 0.22s ease, max-width 0.22s ease, flex-basis 0.22s ease;
+  }
+  /* The offcanvas-body must fill the aside so the footer's `mt-auto` actually
+     pushes Sign Out to the bottom of the sidebar instead of collapsing under
+     the nav links. Bootstrap sets `flex-grow: 0` at lg+, so we re-enable it. */
+  .app-sidebar > .offcanvas-body {
+    flex-grow: 1 !important;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* ---- Collapsed state (icon-only rail) ---- */
+  .app-sidebar.sidebar-collapsed {
+    width: 68px !important;
+    min-width: 68px !important;
+    max-width: 68px !important;
+    flex: 0 0 68px !important;
+  }
+
+  /* Hide text labels — icons only */
+  .app-sidebar.sidebar-collapsed .sidebar-link-label {
+    display: none;
+  }
+
+  /* Center icons in nav links */
+  .app-sidebar.sidebar-collapsed .sidebar-link {
+    justify-content: center;
+    padding: 0.625rem;
+    gap: 0;
+  }
+  .app-sidebar.sidebar-collapsed .sidebar-link svg {
+    width: auto;
+    margin: 0;
+  }
+
+  /* Footer: center the theme toggle; sign-out shrinks to icon-only.
+     `!important` is required to beat Bootstrap's `.justify-content-between`
+     utility (which is itself `!important`); without it the toggle stays
+     left-pinned when the sidebar is collapsed. */
+  .app-sidebar.sidebar-collapsed .sidebar-footer > div {
+    justify-content: center !important;
+  }
+  .app-sidebar.sidebar-collapsed .sidebar-signout-btn {
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
+  }
+
+
+  /* When collapsed, drop the logo and center the expand button in its place */
+  .app-sidebar.sidebar-collapsed .sidebar-brand {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .app-sidebar.sidebar-collapsed .sidebar-brand .brand-logo {
+    display: none;
+  }
+  .app-sidebar.sidebar-collapsed #sidebarCollapseBtn {
+    margin-left: 0 !important; /* override ms-auto so the button sits centered */
+  }
+}
+
+/* ---- 4. Animations ---- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animated-fade-in { animation: fadeInUp 0.35s ease-out both; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; animation: spin 1.2s linear infinite; }
+
+/* ---- 5. Helpers Bootstrap lacks ---- */
+.min-vh-75 { min-height: 75vh; }
+.text-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- 6. Enhanced button contrast for active states ---- */
+/* Outline buttons need better contrast when active/checked */
+.btn-outline-primary:active,
+.btn-outline-primary.active,
+.btn-check:checked + .btn-outline-primary {
+  background-color: #0078D4;
+  border-color: #0078D4;
+  color: #fff;
+}
+
+.btn-outline-primary:active *,
+.btn-outline-primary.active *,
+.btn-check:checked + .btn-outline-primary * {
+  color: #fff !important;
+}
+
+.btn-outline-primary:hover:not(:disabled):not(.disabled),
+.btn-outline-primary.hover {
+  color: #fff;
+  background-color: #0078D4;
+  border-color: #0078D4;
+}
+
+.btn-outline-primary:hover:not(:disabled):not(.disabled) *,
+.btn-outline-primary.hover * {
+  color: #fff !important;
+}
+
+.btn-outline-success:active,
+.btn-outline-success.active,
+.btn-check:checked + .btn-outline-success {
+  background-color: #7FBA00;
+  border-color: #7FBA00;
+  color: #fff;
+}
+
+.btn-outline-success:active *,
+.btn-outline-success.active *,
+.btn-check:checked + .btn-outline-success * {
+  color: #fff !important;
+}
+
+.btn-outline-success:hover:not(:disabled):not(.disabled),
+.btn-outline-success.hover {
+  color: #fff;
+  background-color: #7FBA00;
+  border-color: #7FBA00;
+}
+
+.btn-outline-success:hover:not(:disabled):not(.disabled) *,
+.btn-outline-success.hover * {
+  color: #fff !important;
+}
+
+.btn-outline-secondary:active,
+.btn-outline-secondary.active,
+.btn-check:checked + .btn-outline-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #fff;
+}
+
+.btn-outline-secondary:active *,
+.btn-outline-secondary.active *,
+.btn-check:checked + .btn-outline-secondary * {
+  color: #fff !important;
+}
+
+.btn-outline-secondary:hover:not(:disabled):not(.disabled),
+.btn-outline-secondary.hover {
+  color: #fff;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover:not(:disabled):not(.disabled) *,
+.btn-outline-secondary.hover * {
+  color: #fff !important;
+}
+
+.btn-outline-danger:active,
+.btn-outline-danger.active,
+.btn-check:checked + .btn-outline-danger {
+  background-color: #F25022;
+  border-color: #F25022;
+  color: #fff;
+}
+
+.btn-outline-danger:active *,
+.btn-outline-danger.active *,
+.btn-check:checked + .btn-outline-danger * {
+  color: #fff !important;
+}
+
+/* ---- 7. Live preview responsive (email client widths) ----
+   The iframe's width is driven by the inline style + JS toggle in
+   template_form.html (600px desktop / 380px mobile, always capped at
+   max-width: 100% so it never overflows its column). We deliberately
+   avoid hard-coding `width: 600px !important` here because it would
+   defeat the mobile toggle and force overflow on narrow viewports. */
+#preview-frame {
+  max-width: 100%;
+}
+
+/* Below xl the preview column stacks beneath the form, so the sticky
+   behaviour stops being useful - let it scroll with the page. */
+@media (max-width: 1199.98px) {
+  .sticky-xl-top {
+    position: relative !important;
+    top: auto !important;
+  }
+}
+
+/* Brand logo (inline PNG) */
+.brand-logo {
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  /* filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25)); */
+}
+
+/* ============================================================
+   Blue gradient sidebar — matches the landing-page navbar palette
+   (#0078D4 → #00A4EF, same gradient direction and highlight).
+   ============================================================ */
+.app-sidebar {
+  background:
+    radial-gradient(ellipse at 80% 10%, rgba(255, 255, 255, 0.12), transparent 55%),
+    linear-gradient(135deg, #0078D4 0%, #00A4EF 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.10) !important;
+  color: rgba(255, 255, 255, 0.92);
+  /* Intentionally NOT setting `position: relative` here. Below the lg
+     breakpoint Bootstrap's `.offcanvas { position: fixed }` takes the drawer
+     out of the flex flow so the main column can fill the viewport. Setting
+     `position: relative` here would override that and leave the (off-screen,
+     translated) drawer reserving its 400px width inside the `.d-flex` row,
+     which collapses the page content into a narrow strip on small screens.
+     The `::before` sheen still gets a positioning context: `position: fixed`
+     at <lg and `position: sticky` at lg+ (both establish containing blocks
+     for absolutely-positioned descendants). */
+  isolation: isolate;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+              4px 0 24px rgba(0, 60, 150, 0.20);
+}
+
+/* Subtle inner sheen — keeps the visual depth without adding darkness */
+.app-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 10% 80%, rgba(0, 50, 130, 0.25), transparent 55%),
+    radial-gradient(ellipse at 90% 50%, rgba(255, 255, 255, 0.06), transparent 40%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Make sure inner content paints above the sheen */
+.app-sidebar > * { position: relative; }
+
+/* Brand text + icons → white on blue */
+.app-sidebar .text-primary,
+.app-sidebar .font-display {
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0, 40, 100, 0.30);
+}
+
+/* Sidebar links — white on blue, frosted-white hover/active pills */
+.app-sidebar .sidebar-link {
+  color: rgba(255, 255, 255, 0.88);
+}
+.app-sidebar .sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+.app-sidebar .sidebar-link.active {
+  background-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+              0 2px 8px rgba(0, 40, 100, 0.18);
+}
+.app-sidebar .sidebar-link svg { color: inherit; }
+
+/* Borders inside sidebar → white-alpha so they don't go gray on blue */
+.app-sidebar .border-top,
+.app-sidebar .border-bottom {
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Footer: user email + theme toggle */
+.app-sidebar .text-secondary { color: rgba(255, 255, 255, 0.82) !important; }
+.app-sidebar .theme-toggle {
+  color: rgba(255, 255, 255, 0.88) !important;
+  border-color: transparent !important;
+}
+.app-sidebar .theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+}
+
+/* Collapse toggle button — white/translucent on blue */
+.app-sidebar .sidebar-collapse-btn {
+  color: rgba(255, 255, 255, 0.80);
+  border-radius: 6px;
+}
+.app-sidebar .sidebar-collapse-btn:hover {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  color: #fff;
+}
+
+/* Sign-Out button — white outline on blue background */
+.app-sidebar .btn-outline-danger {
+  --bs-btn-color: rgba(255, 255, 255, 0.90);
+  --bs-btn-border-color: rgba(255, 255, 255, 0.30);
+  --bs-btn-hover-bg: rgba(242, 80, 34, 0.85);
+  --bs-btn-hover-border-color: rgba(242, 80, 34, 0.85);
+  --bs-btn-hover-color: #fff;
+}
+
+/* Mobile drawer close (×) - invert to white on blue */
+.app-sidebar .btn-close {
+  filter: invert(1) grayscale(100%) brightness(2);
+}
+
+/* ============================================================
+   Blue gradient mobile navbar — matches landing-page navbar palette
+   ============================================================ */
+.app-navbar {
+  background:
+    radial-gradient(ellipse at 80% 50%, rgba(255, 255, 255, 0.10), transparent 50%),
+    linear-gradient(135deg, #0078D4 0%, #00A4EF 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  isolation: isolate;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+              0 4px 24px rgba(0, 60, 150, 0.15);
+  border-radius: 12px;
+  margin: 10px 10px 0 10px;
+}
+
+.app-navbar .navbar-brand,
+.app-navbar .font-display,
+.app-navbar .btn-link {
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0, 40, 100, 0.20);
+}
+
+.app-navbar .theme-toggle {
+  color: rgba(255, 255, 255, 0.88) !important;
+  border-color: transparent !important;
+}
+
+.app-navbar .theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+}
+
+/* ============================================================
+   Auth split layout (sign in / sign up)
+   Two-panel design: dark form on the left, blue marble decoration
+   on the right. The wrapper uses `position: fixed; inset: 0` so it
+   escapes the .container constraint of the parent <main> without us
+   needing to restructure base.html. On <md the decoration is hidden
+   and the form takes the full viewport width.
+   ============================================================ */
+.auth-split {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  z-index: 1;
+  background: #0b1220; /* matches form-panel so the gutter never flashes */
+}
+
+/* Left: dark form panel.
+   - `display: flex` with `align-items: center` centers the form vertically
+     when the viewport has room, and `overflow-y: auto` lets it scroll on
+     short screens (small phones in landscape, etc).
+   - `margin: auto` on the inner content gives true vertical centering
+     while still allowing overflow scrolling when content is too tall. */
+.auth-form-panel {
+  flex: 1 1 60%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 2.5rem 1.5rem;
+  background: #0b1220;
+  color: #e2e8f0;
+}
+.auth-form-content {
+  width: 100%;
+  max-width: 420px;
+  margin: auto;
+}
+
+/* Inputs on the dark panel.
+   data-bs-theme="dark" on the panel handles most of this, but the
+   defaults still feel a bit flat - these rules give the inputs a soft
+   translucent surface that lifts off the background. */
+.auth-form-panel .form-control,
+.auth-form-panel .form-select {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+.auth-form-panel .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+.auth-form-panel .form-control:focus,
+.auth-form-panel .form-select:focus {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: #3DA9FF;
+  color: #fff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 120, 212, 0.25);
+}
+/* Chrome's yellow autofill background would clash with the dark surface.
+   Anchor the autofill colors to our palette via an inset box-shadow trick. */
+.auth-form-panel input:-webkit-autofill,
+.auth-form-panel input:-webkit-autofill:hover,
+.auth-form-panel input:-webkit-autofill:focus,
+.auth-form-panel input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #16203a inset !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+  caret-color: #e2e8f0;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.auth-form-panel .form-check-input {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Outline-secondary on a dark panel needs lighter borders to stay visible. */
+.auth-form-panel .btn-outline-secondary {
+  --bs-btn-color: rgba(255, 255, 255, 0.9);
+  --bs-btn-border-color: rgba(255, 255, 255, 0.22);
+  --bs-btn-hover-bg: rgba(255, 255, 255, 0.08);
+  --bs-btn-hover-border-color: rgba(255, 255, 255, 0.35);
+  --bs-btn-hover-color: #fff;
+}
+
+/* Right: blue marble decoration.
+   Layered radial gradients give depth/highlights; an inline SVG with
+   fractal-noise turbulence baked into the data URL provides the marble
+   veining without needing an external image asset. */
+.auth-decoration-panel {
+  flex: 0 0 40%;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 60% 50% at 72% 22%, rgba(150, 200, 255, 0.45), transparent 60%),
+    radial-gradient(ellipse 70% 80% at 55% 60%, rgba(96, 165, 250, 0.35), transparent 65%),
+    radial-gradient(ellipse 70% 60% at 15% 90%, rgba(10, 20, 70, 0.65), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 8% 10%, rgba(10, 20, 70, 0.5), transparent 60%),
+    linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 40%, #2563eb 70%, #1e40af 100%);
+}
+.auth-decoration-panel::before {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800'><filter id='m'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.7  0 0 0 0 1  0 0 0 0.45 0'/></filter><rect width='100%25' height='100%25' filter='url(%23m)'/></svg>");
+  background-size: cover;
+  opacity: 0.55;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+/* Faint highlight stripe that follows the marble's "flow" direction. */
+.auth-decoration-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 65%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+/* Below md: drop the decoration so the form gets the whole viewport. */
+@media (max-width: 767.98px) {
+  .auth-decoration-panel { display: none; }
+  .auth-form-panel { flex: 1 1 100%; padding: 1.5rem 1rem; }
+}
+
+/* The guest theme toggle in base.html is light-themed and would look odd
+   floating over the dark auth panel. Hide it when the auth-split is on
+   the page (uses :has(), supported in all current evergreen browsers). */
+body:has(.auth-split) .theme-toggle { display: none; }
+
+/* ============================================================
+   Fullscreen Live Preview Overlay
+   ============================================================ */
+.preview-card-wrapper.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2000;
+  background: rgba(var(--bs-body-bg-rgb), 0.9);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  padding: 2rem;
+  border-radius: 0 !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.preview-card-wrapper.fullscreen .card {
+  max-width: 1200px;
+  width: 100%;
+  height: 100%;
+  border-radius: 1rem !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid var(--bs-border-color) !important;
+  background: var(--bs-card-bg) !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.preview-card-wrapper.fullscreen .card-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.5rem;
+}
+.preview-card-wrapper.fullscreen .preview-frame-container {
+  flex-grow: 1;
+  height: calc(100vh - 160px) !important;
+  background-color: var(--bs-tertiary-bg);
+}
+.preview-card-wrapper.fullscreen #preview-frame {
+  height: 100% !important;
+}

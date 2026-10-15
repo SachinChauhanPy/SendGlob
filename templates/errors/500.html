@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Internal Server Error (500) - SendGlob{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center animated-fade-in">
+    <div class="col-12 col-sm-10 col-md-7 col-lg-5 text-center">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5">
+                <span class="display-1 fw-bold font-display text-danger d-block">500</span>
+                <h1 class="h4 fw-bold font-display mt-2">Server error</h1>
+                <p class="text-secondary small mt-2 mb-4">An unexpected internal error occurred. We're looking into it - please try again shortly.</p>
+                <a href="{% url 'emails:dashboard' %}" class="btn btn-primary"><i data-lucide="house" class="me-2"></i>Return to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

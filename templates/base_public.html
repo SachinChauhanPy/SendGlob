@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% comment %}
+Base template for public pages (pricing, about, security, legal, contact).
+Provides the shared marketing header and footer around a full-width body;
+each page owns its own container inside public_content.
+{% endcomment %}
+
+{# Strip the default <main> chrome so the header/footer span the viewport. #}
+{% block main_classes %}p-0 m-0{% endblock %}
+
+{% block meta %}
+<meta name="description" content="{% block meta_description %}SendGlob sends bulk email through your own SMTP account and generates personalised certificate PDFs from a CSV, in one dashboard.{% endblock %}">
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+{% block og %}{% endblock %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/public.css' %}">
+{% block public_extra_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+{% include "partials/public_header.html" %}
+{% block public_content %}{% endblock %}
+{% include "partials/public_footer.html" %}
+{% endblock %}

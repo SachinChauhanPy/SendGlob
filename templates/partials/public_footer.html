@@ -1,0 +1,54 @@
+{% load static %}
+{% comment %}
+Footer shared by every public page. All public and legal links must stay
+globally visible (Razorpay activation and user trust both depend on it).
+{% endcomment %}
+<footer class="landing-footer">
+    <div class="container">
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-md-3">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <img src="{% static 'img/dashboard-icon.png' %}" alt="" width="32" height="32" class="brand-logo">
+                    <span class="fw-bold font-display fs-5 text-white">SendGlob</span>
+                </div>
+                <p class="small mb-0" style="max-width: 320px;">Bulk email and document automation that respects your sender reputation and your budget.</p>
+            </div>
+            <div class="col-6 col-md-3">
+                <h6 class="fw-bold text-white mb-3 small text-uppercase">Product</h6>
+                <div class="d-flex flex-column gap-2 small">
+                    <a href="{% url 'landing' %}#features">Features</a>
+                    <a href="{% url 'pages:pricing' %}">Pricing</a>
+                    <a href="{% url 'landing' %}#how-it-works">How it works</a>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <h6 class="fw-bold text-white mb-3 small text-uppercase">Company</h6>
+                <div class="d-flex flex-column gap-2 small">
+                    <a href="{% url 'pages:about' %}">About</a>
+                    <a href="{% url 'pages:security' %}">Security</a>
+                    <a href="{% url 'pages:contact' %}">Contact</a>
+                    <a href="{% url 'account_login' %}">Sign in</a>
+                    <a href="{% url 'account_signup' %}">Sign up</a>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <h6 class="fw-bold text-white mb-3 small text-uppercase">Legal</h6>
+                <div class="d-flex flex-column gap-2 small">
+                    <a href="{% url 'pages:terms' %}">Terms of Service</a>
+                    <a href="{% url 'pages:privacy' %}">Privacy Policy</a>
+                    <a href="{% url 'pages:refund' %}">Refund &amp; Cancellation</a>
+                    <a href="{% url 'pages:acceptable_use' %}">Acceptable Use</a>
+                </div>
+            </div>
+        </div>
+        <hr class="border-secondary opacity-25">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center small">
+            <span>&copy; 2026 SendGlob. Bulk email &amp; document automation.</span>
+            <div class="d-flex gap-3 mt-2 mt-md-0">
+                <a href="{% url 'pages:privacy' %}">Privacy</a>
+                <a href="{% url 'pages:terms' %}">Terms</a>
+                <a href="{% url 'pages:contact' %}">Contact</a>
+            </div>
+        </div>
+    </div>
+</footer>

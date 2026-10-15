@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Billing - SendGlob{% endblock %}
+{% block content %}
+<h1 class="h4 fw-bold mb-4">Billing &amp; credits</h1>
+{% if subscription.status == 'past_due' %}
+<div class="alert alert-danger border-secondary mb-4">
+    <div class="fw-semibold">Subscription payment past due</div>
+    <div class="small">Your latest plan renewal charge was unsuccessful. Please check your payment details or contact support to keep your subscription active.</div>
+</div>
+{% elif subscription.cancel_at_period_end %}
+<div class="alert alert-warning border-secondary mb-4">
+    <div class="fw-semibold">Cancellation scheduled</div>
+    <div class="small">Your subscription will not renew and will end on {{ subscription.current_period_end|date:"M j, Y"|default:"the end of your current cycle" }}.</div>
+</div>
+{% endif %}
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="card bg-body border-secondary h-100"><div class="card-body">
+            <div class="text-secondary small text-uppercase">Balance</div>
+            <div class="fs-2 fw-bold text-body">{{ billing.balance }}</div>
+            <div class="small text-secondary">credits</div>
+            {% if billing.low_balance %}<div class="badge text-bg-warning mt-1">Low balance</div>{% endif %}
+        </div></div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card bg-body border-secondary h-100"><div class="card-body">
+            <div class="text-secondary small text-uppercase">Plan</div>
+            <div class="fs-5 fw-bold text-body text-capitalize">{{ tier }}</div>
+            {% if subscription %}<div class="small text-secondary">{% if subscription.cancel_at_period_end %}ends{% else %}renews{% endif %} {{ subscription.current_period_end|date:"M j, Y"|default:"-" }}</div>{% endif %}
+        </div></div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card bg-body border-secondary h-100"><div class="card-body">
+            <div class="text-secondary small text-uppercase">Used this month</div>
+            <div class="fs-2 fw-bold text-body">{{ credits_used_this_month }}</div>
+            <div class="small text-secondary">credits</div>
+        </div></div>
+    </div>
+</div>
+{% if pending_orders %}
+<div class="card bg-body border-secondary mb-4">
+    <div class="card-header bg-body-tertiary fw-semibold">Awaiting payment</div>
+    <ul class="list-group list-group-flush">
+        {% for o in pending_orders %}
+        <li class="list-group-item bg-body d-flex justify-content-between small">
+            <span class="text-body">{{ o.pack.name }} <span class="text-secondary">&middot; {{ o.amount }} {{ o.currency }} &middot; opened {{ o.created_at|date:"M j, H:i" }}</span></span>
+            <span class="text-secondary">Reference <code>{{ o.short_reference }}</code></span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+<div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'pages:pricing' %}" class="btn btn-primary">Buy credits</a>
+    <a href="{% url 'pages:pricing' %}" class="btn btn-outline-secondary">View plans</a>
+    <a href="{% url 'billing:history' %}" class="btn btn-outline-secondary">History &amp; receipts</a>
+    <a href="{% url 'billing:profile' %}" class="btn btn-outline-secondary">Billing profile</a>
+    {% if subscription %}<a href="{% url 'billing:manage_subscription' %}" class="btn btn-outline-secondary">Manage plan</a>{% endif %}
+</div>
+<p class="text-secondary small mt-4">1 credit = 1 generated document. Email delivery is free. AI template generation costs 2 credits.</p>
+{% endblock %}

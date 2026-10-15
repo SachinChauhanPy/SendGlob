@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}Sign-in Cancelled - SendGlob{% endblock %}
+
+{% block main_classes %}p-0 m-0{% endblock %}
+{% block messages %}{% endblock %}
+
+{% block content %}
+<div class="auth-split">
+    <!-- Left: dark form panel -->
+    <div class="auth-form-panel" data-bs-theme="dark">
+        <div class="auth-form-content animated-fade-in">
+
+            {% include "partials/messages.html" %}
+
+            <div class="mb-4">
+                <span class="d-block small text-secondary mb-1">Sign-in cancelled for</span>
+                <span class="d-inline-flex align-items-center gap-2 font-display fw-bold text-primary" style="font-size: 2rem; line-height: 1.1;">
+                    <img src="{% static 'img/dashboard-icon.png' %}" alt="" width="40" height="40" class="brand-logo">
+                    SendGlob
+                </span>
+            </div>
+
+            <hr class="opacity-25 mb-4">
+
+            <div class="d-flex align-items-start gap-3 mb-4">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning bg-opacity-25 text-warning flex-shrink-0" style="width: 48px; height: 48px;">
+                    <i data-lucide="circle-pause" class="fs-4"></i>
+                </span>
+                <div>
+                    <h2 class="h5 fw-bold font-display mb-1">Sign-in cancelled</h2>
+                    <p class="text-secondary small mb-0">
+                        You decided to cancel signing in using one of your existing accounts. If this was a mistake, head back to sign in and try again.
+                    </p>
+                </div>
+            </div>
+
+            <a href="{% url 'account_login' %}" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold">
+                Back to sign in <i data-lucide="arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Right: blue marble decoration -->
+    <div class="auth-decoration-panel" aria-hidden="true"></div>
+</div>
+{% endblock %}

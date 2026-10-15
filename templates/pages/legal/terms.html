@@ -1,0 +1,77 @@
+{% extends "pages/legal/legal_base.html" %}
+{% block title %}Terms of Service - SendGlob{% endblock %}
+{% block legal_title %}Terms of Service{% endblock %}
+{% block legal_body %}
+
+<h2 class="h5 fw-bold mt-4 mb-2">1. Who we are and what these terms cover</h2>
+<p>SendGlob ("the Service") is a bulk email and document automation platform
+operated by {{ legal_name }}. By creating an account or using the Service you
+agree to these Terms of Service, the <a href="{% url 'pages:privacy' %}">Privacy
+Policy</a>, and the <a href="{% url 'pages:acceptable_use' %}">Acceptable Use and
+Anti-Spam Policy</a>, which is incorporated into these terms.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">2. Eligibility and your account</h2>
+<p>You must be at least 18 years old and capable of entering a binding contract.
+You are responsible for the accuracy of your account information, for keeping
+your credentials confidential, and for all activity under your account. You must
+notify us promptly of any unauthorized use.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">3. Your email account and deliverability</h2>
+<p>The Service sends email through the SMTP account you connect, using an app
+password you create. You remain the sender of record. Deliverability is not
+guaranteed: it depends on your provider's limits (for example Gmail's daily
+sending caps), your sender reputation, recipient servers, and the content you
+send. You are responsible for complying with your email provider's terms.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">4. Credits, plans, and payment</h2>
+<p>Paid features are consumed through prepaid credits, purchased as one-time
+packs or granted by a subscription plan. Credits are digital goods, are not
+legal tender, have no cash value, and are non-transferable. Email delivery does
+not consume credits; document generation and AI drafting do, at the rates shown
+at purchase time. Payments are processed by Razorpay; we do not store your card
+details. Refunds are governed by the
+<a href="{% url 'pages:refund' %}">Refund &amp; Cancellation Policy</a>.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">5. Your content and your recipients</h2>
+<p>You retain all rights to the content you upload (templates, designs, CSV
+data, signatures). You grant us only the limited rights needed to operate the
+Service on your behalf. For recipient personal data you upload, you are the data
+controller and we act as your processor, as described in the Privacy Policy. You
+warrant that you have a lawful basis, including consent where required, to
+contact every recipient on your lists.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">6. Acceptable use</h2>
+<p>You must not use the Service to send unsolicited bulk email or any content
+prohibited by the Acceptable Use and Anti-Spam Policy. We may suspend or
+terminate accounts that violate it, and where reasonable we will warn you
+first.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">7. Suspension and termination</h2>
+<p>You may stop using the Service and delete your account at any time. We may
+suspend or terminate access for material breach of these terms, for abuse that
+risks the Service or other users, or where required by law. Unused credits are
+handled per the Refund &amp; Cancellation Policy.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">8. Disclaimers</h2>
+<p>The Service is provided "as is" and "as available", without warranties of any
+kind, express or implied, including fitness for a particular purpose and
+non-infringement. We do not warrant uninterrupted or error-free operation.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">9. Limitation of liability</h2>
+<p>To the maximum extent permitted by law, {{ legal_name }} is not liable for
+indirect, incidental, special, or consequential damages, or loss of profits,
+data, or goodwill. Our aggregate liability for any claim is limited to the
+amount you paid for the Service in the three months before the event giving rise
+to the claim.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">10. Changes to these terms</h2>
+<p>We may update these terms as the Service evolves. Material changes will be
+announced on this page with a new effective date, and continued use after the
+effective date constitutes acceptance.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">11. Governing law</h2>
+<p>These terms are governed by the laws of {{ jurisdiction }}, and courts located
+in {{ jurisdiction }} have exclusive jurisdiction, subject to any mandatory
+consumer protections of your place of residence.</p>
+
+{% endblock %}

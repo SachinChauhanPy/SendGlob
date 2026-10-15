@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Checkout - SendGlob{% endblock %}
+{% block content %}
+<h1 class="h4 fw-bold mb-3">Checkout</h1>
+<div class="card bg-body border-secondary mb-3" style="max-width:520px;">
+    <div class="card-body">
+        <div class="d-flex justify-content-between py-1"><span class="text-secondary">Item</span>
+            <span class="text-body">{% if kind == 'plan' %}{{ item.tier }} plan{% else %}{{ item.name }}{% endif %}</span></div>
+        <div class="d-flex justify-content-between py-1"><span class="text-secondary">Credits</span>
+            <span class="text-body">{% if kind == 'plan' %}{{ item.credits_per_cycle }} per {% if item.billing_cycle == 'yearly' %}year{% else %}month{% endif %}{% else %}{{ order.credits }}{% endif %}</span></div>
+        <div class="d-flex justify-content-between py-1"><span class="text-secondary">{% if kind == 'plan' %}Billed {{ item.get_billing_cycle_display|lower }}{% else %}Amount{% endif %}</span>
+            <span class="text-body fw-bold">{{ amount }} {{ currency }}</span></div>
+    </div>
+</div>
+
+{% if is_live %}
+<button id="pay-btn" class="btn btn-primary">{% if kind == 'plan' %}Subscribe{% else %}Pay{% endif %} {{ amount }} {{ currency }}</button>
+<a href="{% url 'pages:pricing' %}" class="btn btn-outline-secondary ms-2">Back to pricing</a>
+<div id="pay-error" class="alert alert-danger border-secondary small mt-3 d-none" style="max-width:520px;" role="alert"></div>
+
+{# The success handler posts the signed ids back here; the server verifies the #}
+{# signature before granting anything. The webhook is the fallback path. #}
+<form id="complete-form" method="post" action="{% url 'billing:checkout_complete' %}" class="d-none">
+    {% csrf_token %}
+    <input type="hidden" name="razorpay_payment_id">
+    <input type="hidden" name="razorpay_signature">
+    {% if kind == 'plan' %}<input type="hidden" name="razorpay_subscription_id">{% else %}<input type="hidden" name="razorpay_order_id">{% endif %}
+</form>
+{{ gateway_id|json_script:"rzp-gateway-id" }}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+(function () {
+    var form = document.getElementById('complete-form');
+    var errorBox = document.getElementById('pay-error');
+    var options = {
+        key: "{{ razorpay_key_id|escapejs }}",
+        name: "{{ seller_name|escapejs }}",
+        description: "{% if kind == 'plan' %}{{ item.tier|escapejs }} plan{% else %}{{ item.name|escapejs }}{% endif %}",
+        prefill: {
+            name: "{{ user.full_name|default:''|escapejs }}",
+            email: "{{ user.email|default:''|escapejs }}",
+            contact: "{{ user.phone|default:''|escapejs }}"
+        },
+        theme: { color: "#0d6efd" },
+        handler: function (response) {
+            Object.keys(response).forEach(function (key) {
+                if (form.elements[key]) { form.elements[key].value = response[key]; }
+            });
+            form.submit();
+        }
+    };
+    var gatewayId = JSON.parse(document.getElementById('rzp-gateway-id').textContent);
+    {% if kind == 'plan' %}
+    options.subscription_id = gatewayId;
+    {% else %}
+    options.order_id = gatewayId;
+    options.amount = {{ amount_minor }};
+    options.currency = "{{ currency|escapejs }}";
+    {% endif %}
+    var rzp = new Razorpay(options);
+    rzp.on('payment.failed', function (response) {
+        var reason = (response && response.error && response.error.description) || 'The payment did not go through.';
+        errorBox.textContent = reason + ' You have not been charged; you can try again.';
+        errorBox.classList.remove('d-none');
+    });
+    document.getElementById('pay-btn').addEventListener('click', function () {
+        errorBox.classList.add('d-none');
+        rzp.open();
+    });
+})();
+</script>
+{% else %}
+<div class="alert alert-info border-secondary" style="max-width:520px;">
+    <p class="mb-1 fw-semibold">Manual {% if kind == 'plan' %}subscription setup{% else %}payment{% endif %}</p>
+    <p class="small mb-0">Online checkout is not available right now. Your payment reference is
+    <code>{% if kind == 'plan' %}{{ gateway_id }}{% else %}{{ order.short_reference }}{% endif %}</code>.
+    Quote it when you pay via the arranged method and we will
+    {% if kind == 'plan' %}activate your plan{% else %}add your credits{% endif %}.
+    Open references are listed on your <a href="{% url 'billing:dashboard' %}">billing dashboard</a>.</p>
+</div>
+{% endif %}
+{% endblock %}

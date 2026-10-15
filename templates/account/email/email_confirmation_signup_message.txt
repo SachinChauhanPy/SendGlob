@@ -1,0 +1,13 @@
+Hi,
+
+Thanks for signing up for emailOPS! Please verify your email address to
+activate your account and start sending bulk campaigns from your own Gmail.
+
+Verify your email:
+{{ activate_url }}
+
+This link expires in 3 days. If you did not create an account, you can
+safely ignore this email.
+
+The emailOPS Team
+https://emailops.in

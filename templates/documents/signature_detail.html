@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}{{ signature.name }} - {{ APP_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkerboard {
+        background-image:
+            linear-gradient(45deg, var(--bs-secondary-bg) 25%, transparent 25%, transparent 75%, var(--bs-secondary-bg) 75%),
+            linear-gradient(45deg, var(--bs-secondary-bg) 25%, transparent 25%, transparent 75%, var(--bs-secondary-bg) 75%);
+        background-size: 18px 18px;
+        background-position: 0 0, 9px 9px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animated-fade-in" style="max-width: 880px;">
+    <a href="{% url 'documents:signature_list' %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to Signatures
+    </a>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h1 class="h3 fw-bold font-display m-0">{{ signature.name }}</h1>
+            <div class="small text-secondary mt-1">
+                {% if signature.is_ready %}
+                    <span class="badge text-bg-success"><i data-lucide="check-circle" class="me-1"></i>Ready</span>
+                    {% if signature.confidence_score is not None %}
+                        <span class="ms-2">Confidence: {{ signature.confidence_score|floatformat:2 }}</span>
+                    {% endif %}
+                {% elif signature.processing_status == 'failed' %}
+                    <span class="badge text-bg-danger"><i data-lucide="alert-triangle" class="me-1"></i>Failed</span>
+                {% else %}
+                    <span class="badge text-bg-secondary"><i data-lucide="loader" class="me-1"></i>{{ signature.get_processing_status_display }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            {% if signature.is_ready %}
+            <a href="{% url 'documents:signature_edit' signature.id %}" class="btn btn-primary"><i data-lucide="scissors" class="me-1"></i>Edit / Touch up</a>
+            {% endif %}
+            <form action="{% url 'documents:signature_reprocess' signature.id %}" method="post" class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-primary"><i data-lucide="refresh-ccw" class="me-1"></i>Re-process</button>
+            </form>
+            <form action="{% url 'documents:signature_delete' signature.id %}" method="post" onsubmit="return confirm('Delete this signature?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger"><i data-lucide="trash-2" class="me-1"></i>Delete</button>
+            </form>
+        </div>
+    </div>
+
+    {% if signature.processing_status == 'failed' and signature.error_message %}
+        <div class="alert alert-danger small"><i data-lucide="alert-triangle" class="me-1"></i>{{ signature.error_message }}</div>
+    {% endif %}
+
+    <div class="row g-4">
+        <div class="col-12 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-3">
+                    <h2 class="h6 fw-bold font-display text-secondary border-bottom pb-2 mb-3"><i data-lucide="image" class="me-2"></i>Original</h2>
+                    <div class="d-flex align-items-center justify-content-center bg-body-tertiary rounded-3" style="min-height: 220px;">
+                        <img src="{% url 'documents:signature_image' signature.id 'original' %}" class="mw-100 p-2 object-fit-contain" style="max-height: 320px;" alt="Original upload">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-3">
+                    <h2 class="h6 fw-bold font-display text-primary border-bottom pb-2 mb-3"><i data-lucide="sparkles" class="me-2"></i>Background Removed</h2>
+                    <div class="d-flex align-items-center justify-content-center rounded-3 checkerboard" style="min-height: 220px;">
+                        {% if signature.is_ready %}
+                            <img src="{% url 'documents:signature_image' signature.id 'processed' %}" class="mw-100 p-2 object-fit-contain" style="max-height: 320px;" alt="Processed signature">
+                        {% else %}
+                            <span class="text-secondary small">Processing — this view refreshes automatically.</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if signature.processing_status == 'pending' or signature.processing_status == 'processing' %}
+<script>
+    // Background removal runs asynchronously; poll until it settles.
+    setTimeout(() => window.location.reload(), 4000);
+</script>
+{% endif %}
+{% endblock %}

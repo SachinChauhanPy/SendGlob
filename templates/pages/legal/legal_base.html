@@ -1,0 +1,30 @@
+{% extends "base_public.html" %}
+{% comment %}
+Shared frame for the legal pages. Placeholders (legal_name, contact_email,
+jurisdiction, effective_date) come from pages.content.legal_context and must be
+reviewed by the owner before launch. The notice below is intentionally visible.
+{% endcomment %}
+{% block public_content %}
+<div class="container py-5" style="max-width: 760px;">
+    <span class="section-eyebrow">Legal</span>
+    <h1 class="section-headline mb-2">{% block legal_title %}{% endblock %}</h1>
+    <p class="text-secondary small mb-4">Effective date: {{ effective_date }}</p>
+
+    <div class="alert alert-warning small" role="note">
+        <strong>Template notice:</strong> this document is a review-ready template,
+        not legal advice. It reflects how SendGlob is built, but the operator must
+        review it (and take professional advice where needed) before relying on it.
+    </div>
+
+    <div class="legal-body text-body">
+        {% block legal_body %}{% endblock %}
+    </div>
+
+    <hr class="my-5 border-secondary">
+    <p class="small text-secondary">
+        Questions about this document? Contact {{ legal_name }} at
+        <a href="mailto:{{ contact_email }}">{{ contact_email }}</a> or via the
+        <a href="{% url 'pages:contact' %}">contact form</a>.
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+Hi,
+
+Someone tried to register a new emailOPS account using {{ email }},
+but an account with this address already exists.
+
+Sign in here:
+https://{{ current_site.domain }}/accounts/login/
+
+Forgot your password? Reset it at:
+{{ password_reset_url }}
+
+If you didn't try to create an account, someone may have entered your
+email by mistake. No action is needed.
+
+The emailOPS Team
+https://emailops.in

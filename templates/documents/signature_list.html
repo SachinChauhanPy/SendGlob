@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Signatures - {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 animated-fade-in">
+    <div class="col-12 col-md-7">
+        <h1 class="h3 fw-bold font-display m-0">Signatures</h1>
+        <p class="text-secondary mb-0">Upload a signature photo and we clean the background automatically. Reference it by name from a CSV column to sign documents.</p>
+    </div>
+    <div class="col-12 col-md-5 text-md-end mt-3 mt-md-0">
+        <a href="{% url 'documents:signature_create' %}" class="btn btn-primary">
+            <i data-lucide="pen-tool" class="me-2"></i> Upload Signature
+        </a>
+    </div>
+</div>
+
+<div class="animated-fade-in">
+    {% if signatures %}
+        <div class="row g-4">
+            {% for signature in signatures %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+                    <a href="{% url 'documents:signature_detail' signature.id %}" class="text-decoration-none">
+                        <div class="position-relative bg-body-tertiary border-bottom d-flex align-items-center justify-content-center" style="height: 150px; background-image: linear-gradient(45deg, var(--bs-secondary-bg) 25%, transparent 25%, transparent 75%, var(--bs-secondary-bg) 75%), linear-gradient(45deg, var(--bs-secondary-bg) 25%, transparent 25%, transparent 75%, var(--bs-secondary-bg) 75%); background-size: 16px 16px; background-position: 0 0, 8px 8px;">
+                            {% if signature.is_ready %}
+                                <img src="{% url 'documents:signature_image' signature.id 'processed' %}" class="mw-100 mh-100 p-3 object-fit-contain" alt="{{ signature.name }}">
+                            {% else %}
+                                <span class="badge text-bg-{% if signature.processing_status == 'failed' %}danger{% else %}secondary{% endif %}">{{ signature.get_processing_status_display }}</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    <div class="card-body">
+                        <h2 class="h5 fw-bold font-display text-truncate m-0 text-body">{{ signature.name }}</h2>
+                        <div class="small text-secondary mt-1">
+                            {% if signature.is_ready %}
+                                <i data-lucide="check-circle" class="me-1 text-success"></i>Ready
+                            {% elif signature.processing_status == 'failed' %}
+                                <i data-lucide="alert-triangle" class="me-1 text-danger"></i>Failed
+                            {% else %}
+                                <i data-lucide="loader" class="me-1"></i>{{ signature.get_processing_status_display }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top d-flex justify-content-between align-items-center">
+                        <span class="small text-secondary">{{ signature.created_at|date:"M d, Y" }}</span>
+                        <form action="{% url 'documents:signature_delete' signature.id %}" method="post" onsubmit="return confirm('Delete this signature?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete signature">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center p-5">
+                <i data-lucide="pen-tool" class="text-secondary opacity-50 mb-3" style="font-size:2.5rem;"></i>
+                <h2 class="h4 fw-bold font-display">No signatures yet</h2>
+                <p class="text-secondary mx-auto" style="max-width: 460px;">Upload a clear photo of a signature on light paper. We isolate the strokes and store a clean transparent PNG you can place on any document template.</p>
+                <a href="{% url 'documents:signature_create' %}" class="btn btn-primary mt-2">
+                    <i data-lucide="pen-tool" class="me-2"></i> Upload Signature
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

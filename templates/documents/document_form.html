@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ APP_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    #previewCanvas { max-width: 100%; height: auto; display: block; border-radius: .5rem; background: var(--bs-tertiary-bg); }
+    .preview-wrap { min-height: 160px; }
+    .field-card { background: var(--bs-body-bg); }
+    .color-group .form-control-color { max-width: 46px; flex: 0 0 auto; }
+    @media (min-width: 992px) { .preview-sticky { position: sticky; top: 1rem; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animated-fade-in">
+    <a href="{% url 'documents:list' %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to Documents
+    </a>
+    <h1 class="h3 fw-bold font-display m-0">{{ title }}</h1>
+    <p class="text-secondary mb-4">Upload a background, then place one or more text fields. Each field reads the CSV column matching its field name.</p>
+
+    <form method="POST" enctype="multipart/form-data" id="doc-template-form">
+        {% csrf_token %}
+        <div class="row g-4">
+            <!-- Left: settings + typography + fields -->
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <h2 class="h6 fw-bold font-display text-primary border-bottom pb-2 mb-3"><i data-lucide="settings" class="me-2"></i>Template</h2>
+                        {% if form.non_field_errors %}<div class="alert alert-danger small py-2">{{ form.non_field_errors }}</div>{% endif %}
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label small fw-semibold">Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-7">
+                                <label for="{{ form.template_file.id_for_label }}" class="form-label small fw-semibold">Background Image</label>
+                                {{ form.template_file }}
+                                {% if form.template_file.errors %}<div class="text-danger small mt-1">{{ form.template_file.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-12 col-sm-5">
+                                <label for="{{ form.output_format.id_for_label }}" class="form-label small fw-semibold">Output Format</label>
+                                {{ form.output_format }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mt-4">
+                    <div class="card-body p-4">
+                        <h2 class="h6 fw-bold font-display text-info border-bottom pb-2 mb-3"><i data-lucide="a-large-small" class="me-2"></i>Typography</h2>
+                        <div class="form-check form-switch mb-3">
+                            {{ form.use_global_typography }}
+                            <label class="form-check-label small fw-semibold" for="id_use_global_typography">Use one font, size, color &amp; alignment for every field</label>
+                        </div>
+                        <div id="global-typo" class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-semibold" for="{{ form.global_font_size.id_for_label }}">Size (px)</label>
+                                {{ form.global_font_size }}
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-semibold" for="{{ form.global_font_color.id_for_label }}">Color</label>
+                                <div class="input-group input-group-sm color-group global-color-group">
+                                    <input type="color" class="form-control form-control-color color-picker" value="#000000" title="Pick color" aria-label="Global color picker">
+                                    {{ form.global_font_color }}
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-semibold" for="{{ form.global_alignment.id_for_label }}">Alignment</label>
+                                {{ form.global_alignment }}
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-semibold" for="{{ form.global_font_file.id_for_label }}">Font (TTF)</label>
+                                {{ form.global_font_file }}
+                            </div>
+                            <div class="col-12"><p class="form-text small mb-0">When on, each field's own size, color, alignment and font are ignored.</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mt-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <h2 class="h6 fw-bold font-display text-success m-0"><i data-lucide="type" class="me-2"></i>Text Fields</h2>
+                            <button type="button" id="add-field-btn" class="btn btn-sm btn-outline-success"><i data-lucide="plus" class="me-1"></i>Add field</button>
+                        </div>
+                        {{ formset.management_form }}
+                        {% if formset.non_form_errors %}<div class="alert alert-danger small py-2">{{ formset.non_form_errors }}</div>{% endif %}
+                        <div id="fields-container">
+                            {% for f in formset %}
+                            <div class="field-card card border rounded-3 mb-3" data-field-card>
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold small text-secondary"><i data-lucide="text-cursor-input" class="me-1"></i>Field</span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-field" title="Remove this field"><i data-lucide="trash-2"></i></button>
+                                    </div>
+                                    {{ f.id }}
+                                    {% if f.non_field_errors %}<div class="text-danger small mb-2">{{ f.non_field_errors }}</div>{% endif %}
+                                    <div class="row g-2">
+                                        <div class="col-12 col-sm-6">
+                                            <label class="form-label small mb-1">Field name <span class="text-secondary">(CSV column)</span></label>
+                                            {{ f.field_name }}
+                                            {% if f.field_name.errors %}<div class="text-danger small">{{ f.field_name.errors.0 }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-12 col-sm-6"><label class="form-label small mb-1">Label</label>{{ f.label }}</div>
+                                        <div class="col-4"><label class="form-label small mb-1">X start</label>{{ f.x_start }}</div>
+                                        <div class="col-4"><label class="form-label small mb-1">X end</label>{{ f.x_end }}</div>
+                                        <div class="col-4"><label class="form-label small mb-1">Y</label>{{ f.y_coordinate }}</div>
+                                        <div class="col-6 col-sm-3 per-field-typo"><label class="form-label small mb-1">Size</label>{{ f.font_size }}</div>
+                                        <div class="col-6 col-sm-3 per-field-typo">
+                                            <label class="form-label small mb-1">Color</label>
+                                            <div class="input-group input-group-sm color-group">
+                                                <input type="color" class="form-control form-control-color color-picker" value="#000000" title="Pick color" aria-label="Field color picker">
+                                                {{ f.font_color }}
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-sm-3 per-field-typo"><label class="form-label small mb-1">Align</label>{{ f.alignment }}</div>
+                                        <div class="col-6 col-sm-3 per-field-typo"><label class="form-label small mb-1">Font</label>{{ f.font_file }}</div>
+                                    </div>
+                                    <div class="d-none delete-box">{{ f.DELETE }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <p class="form-text small mb-0">Name a field <code>name</code> to use the recipient's name. Other fields read the CSV column with the same header.</p>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mt-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <h2 class="h6 fw-bold font-display text-warning m-0"><i data-lucide="pen-tool" class="me-2"></i>Signature Fields</h2>
+                            <button type="button" id="add-sig-btn" class="btn btn-sm btn-outline-warning"><i data-lucide="plus" class="me-1"></i>Add signature</button>
+                        </div>
+                        {{ sig_formset.management_form }}
+                        {% if sig_formset.non_form_errors %}<div class="alert alert-danger small py-2">{{ sig_formset.non_form_errors }}</div>{% endif %}
+                        <div id="sig-fields-container">
+                            {% for sf in sig_formset %}
+                            <div class="field-card card border rounded-3 mb-3" data-sig-card>
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold small text-secondary"><i data-lucide="pen-tool" class="me-1"></i>Signature</span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-sig" title="Remove this signature field"><i data-lucide="trash-2"></i></button>
+                                    </div>
+                                    {{ sf.id }}
+                                    {% if sf.non_field_errors %}<div class="text-danger small mb-2">{{ sf.non_field_errors }}</div>{% endif %}
+                                    <div class="row g-2">
+                                        <div class="col-12 col-sm-6"><label class="form-label small mb-1">Label</label>{{ sf.label }}</div>
+                                        <div class="col-12 col-sm-6">
+                                            <label class="form-label small mb-1">Source column <span class="text-secondary">(CSV)</span></label>
+                                            {{ sf.source_column }}
+                                            {% if sf.source_column.errors %}<div class="text-danger small">{{ sf.source_column.errors.0 }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-4"><label class="form-label small mb-1">X start</label>{{ sf.x_start }}</div>
+                                        <div class="col-4"><label class="form-label small mb-1">X end</label>{{ sf.x_end }}</div>
+                                        <div class="col-4"><label class="form-label small mb-1">Y top</label>{{ sf.y_top }}</div>
+                                        <div class="col-6"><label class="form-label small mb-1">Max height</label>{{ sf.max_height }}</div>
+                                        <div class="col-6"><label class="form-label small mb-1">Align</label>{{ sf.alignment }}</div>
+                                    </div>
+                                    <div class="d-none delete-box">{{ sf.DELETE }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <p class="form-text small mb-0">Each recipient's signature is matched from the CSV column above against your <a href="{% url 'documents:signature_list' %}" target="_blank">saved signatures</a> by name. Boxes show as placeholders in the saved preview.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: live preview -->
+            <div class="col-12 col-lg-5">
+                <div class="card border-0 shadow-sm rounded-4 preview-sticky">
+                    <div class="card-body p-4">
+                        <h2 class="h6 fw-bold font-display text-secondary border-bottom pb-2 mb-3"><i data-lucide="image" class="me-2"></i>Live Preview</h2>
+                        <div class="preview-wrap d-flex align-items-center justify-content-center">
+                            <canvas id="previewCanvas" width="600" height="400"></canvas>
+                            <p id="preview-empty" class="text-secondary small text-center mb-0">Choose a background image to see a live preview as you place fields.</p>
+                        </div>
+                        <p class="form-text small mt-2 mb-0">Live coordinate guide. Exact fonts and the final file are produced on save.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+            <button type="submit" class="btn btn-primary px-4">Save Template</button>
+        </div>
+
+        {# JS template for a brand-new field card #}
+        <template id="empty-field-card">
+            <div class="field-card card border rounded-3 mb-3" data-field-card>
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-semibold small text-secondary"><i data-lucide="text-cursor-input" class="me-1"></i>Field</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-field" title="Remove this field"><i data-lucide="trash-2"></i></button>
+                    </div>
+                    {{ formset.empty_form.id }}
+                    <div class="row g-2">
+                        <div class="col-12 col-sm-6"><label class="form-label small mb-1">Field name <span class="text-secondary">(CSV column)</span></label>{{ formset.empty_form.field_name }}</div>
+                        <div class="col-12 col-sm-6"><label class="form-label small mb-1">Label</label>{{ formset.empty_form.label }}</div>
+                        <div class="col-4"><label class="form-label small mb-1">X start</label>{{ formset.empty_form.x_start }}</div>
+                        <div class="col-4"><label class="form-label small mb-1">X end</label>{{ formset.empty_form.x_end }}</div>
+                        <div class="col-4"><label class="form-label small mb-1">Y</label>{{ formset.empty_form.y_coordinate }}</div>
+                        <div class="col-6 col-sm-3 per-field-typo"><label class="form-label small mb-1">Size</label>{{ formset.empty_form.font_size }}</div>
+                        <div class="col-6 col-sm-3 per-field-typo">
+                            <label class="form-label small mb-1">Color</label>
+                            <div class="input-group input-group-sm color-group">
+                                <input type="color" class="form-control form-control-color color-picker" value="#000000" title="Pick color" aria-label="Field color picker">
+                                {{ formset.empty_form.font_color }}
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-3 per-field-typo"><label class="form-label small mb-1">Align</label>{{ formset.empty_form.alignment }}</div>
+                        <div class="col-6 col-sm-3 per-field-typo"><label class="form-label small mb-1">Font</label>{{ formset.empty_form.font_file }}</div>
+                    </div>
+                    <div class="d-none delete-box">{{ formset.empty_form.DELETE }}</div>
+                </div>
+            </div>
+        </template>
+
+        {# JS template for a brand-new signature field card #}
+        <template id="empty-sig-card">
+            <div class="field-card card border rounded-3 mb-3" data-sig-card>
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-semibold small text-secondary"><i data-lucide="pen-tool" class="me-1"></i>Signature</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-sig" title="Remove this signature field"><i data-lucide="trash-2"></i></button>
+                    </div>
+                    {{ sig_formset.empty_form.id }}
+                    <div class="row g-2">
+                        <div class="col-12 col-sm-6"><label class="form-label small mb-1">Label</label>{{ sig_formset.empty_form.label }}</div>
+                        <div class="col-12 col-sm-6"><label class="form-label small mb-1">Source column <span class="text-secondary">(CSV)</span></label>{{ sig_formset.empty_form.source_column }}</div>
+                        <div class="col-4"><label class="form-label small mb-1">X start</label>{{ sig_formset.empty_form.x_start }}</div>
+                        <div class="col-4"><label class="form-label small mb-1">X end</label>{{ sig_formset.empty_form.x_end }}</div>
+                        <div class="col-4"><label class="form-label small mb-1">Y top</label>{{ sig_formset.empty_form.y_top }}</div>
+                        <div class="col-6"><label class="form-label small mb-1">Max height</label>{{ sig_formset.empty_form.max_height }}</div>
+                        <div class="col-6"><label class="form-label small mb-1">Align</label>{{ sig_formset.empty_form.alignment }}</div>
+                    </div>
+                    <div class="d-none delete-box">{{ sig_formset.empty_form.DELETE }}</div>
+                </div>
+            </div>
+        </template>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const prefix = "{{ formset.prefix }}";
+    const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+    const container = document.getElementById('fields-container');
+    const emptyTpl = document.getElementById('empty-field-card');
+    const sigPrefix = "{{ sig_formset.prefix }}";
+    const sigTotalForms = document.getElementById('id_' + sigPrefix + '-TOTAL_FORMS');
+    const sigContainer = document.getElementById('sig-fields-container');
+    const sigEmptyTpl = document.getElementById('empty-sig-card');
+    const canvas = document.getElementById('previewCanvas');
+    const ctx = canvas.getContext('2d');
+    const emptyMsg = document.getElementById('preview-empty');
+    const globalToggle = document.getElementById('id_use_global_typography');
+    const globalCard = document.getElementById('global-typo');
+    let bgImg = null;
+
+    const isHex = v => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test((v || '').trim());
+
+    function syncColorGroup(group) {
+        const picker = group.querySelector('.color-picker');
+        const hex = group.querySelector('input[name$="-font_color"], input[name="global_font_color"]');
+        if (!picker || !hex) return;
+        if (isHex(hex.value)) picker.value = hex.value;
+        picker.addEventListener('input', () => { hex.value = picker.value; redraw(); });
+        hex.addEventListener('input', () => { if (isHex(hex.value)) picker.value = hex.value; redraw(); });
+    }
+
+    function initCard(card) {
+        card.querySelectorAll('.color-group').forEach(syncColorGroup);
+        const rm = card.querySelector('.remove-field');
+        if (rm) rm.addEventListener('click', () => removeField(card));
+    }
+
+    function addField() {
+        const idx = parseInt(totalForms.value, 10);
+        const wrap = document.createElement('div');
+        wrap.innerHTML = emptyTpl.innerHTML.replace(/__prefix__/g, idx).trim();
+        const card = wrap.firstElementChild;
+        container.appendChild(card);
+        totalForms.value = idx + 1;
+        initCard(card);
+        syncTypo();
+        if (window.lucide) lucide.createIcons();
+        redraw();
+    }
+
+    function removeField(card) {
+        const del = card.querySelector('input[type=checkbox][name$="-DELETE"]');
+        if (del) { del.checked = true; card.style.display = 'none'; }
+        else { card.remove(); }
+        redraw();
+    }
+
+    function initSigCard(card) {
+        const rm = card.querySelector('.remove-sig');
+        if (rm) rm.addEventListener('click', () => removeField(card));
+    }
+
+    function addSig() {
+        const idx = parseInt(sigTotalForms.value, 10);
+        const wrap = document.createElement('div');
+        wrap.innerHTML = sigEmptyTpl.innerHTML.replace(/__prefix__/g, idx).trim();
+        const card = wrap.firstElementChild;
+        sigContainer.appendChild(card);
+        sigTotalForms.value = idx + 1;
+        initSigCard(card);
+        if (window.lucide) lucide.createIcons();
+        redraw();
+    }
+
+    function syncTypo() {
+        const on = globalToggle && globalToggle.checked;
+        if (globalCard) globalCard.style.display = on ? '' : 'none';
+        document.querySelectorAll('.per-field-typo').forEach(el => { el.style.display = on ? 'none' : ''; });
+    }
+
+    // ---- live canvas preview ----
+    const gSize = document.querySelector('input[name="global_font_size"]');
+    const gColor = document.querySelector('input[name="global_font_color"]');
+    const gAlign = document.querySelector('select[name="global_alignment"]');
+
+    function loadBg(src) {
+        const img = new Image();
+        img.onload = () => {
+            bgImg = img;
+            canvas.width = img.naturalWidth || 600;
+            canvas.height = img.naturalHeight || 400;
+            canvas.style.display = 'block';
+            if (emptyMsg) emptyMsg.style.display = 'none';
+            redraw();
+        };
+        img.src = src;
+    }
+
+    function redraw() {
+        if (!bgImg) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        const useGlobal = globalToggle && globalToggle.checked;
+        container.querySelectorAll('[data-field-card]').forEach(card => {
+            if (card.style.display === 'none') return;
+            const del = card.querySelector('input[name$="-DELETE"]');
+            if (del && del.checked) return;
+            const get = n => card.querySelector('[name$="-' + n + '"]');
+            const fname = (get('field_name')?.value || '').trim();
+            const label = (get('label')?.value || '').trim();
+            const xs = parseFloat(get('x_start')?.value) || 0;
+            const xe = parseFloat(get('x_end')?.value) || 0;
+            const y = parseFloat(get('y_coordinate')?.value) || 0;
+            let size, color, align;
+            if (useGlobal) {
+                size = parseFloat(gSize?.value) || 48;
+                color = gColor?.value || '#000000';
+                align = gAlign?.value || 'center';
+            } else {
+                size = parseFloat(get('font_size')?.value) || 48;
+                color = get('font_color')?.value || '#000000';
+                align = get('alignment')?.value || 'center';
+            }
+            const text = fname === 'name' ? 'John Doe' : (label || fname || 'Sample');
+            ctx.fillStyle = isHex(color) ? color : '#000000';
+            ctx.font = size + 'px Georgia, serif';
+            ctx.textBaseline = 'top';
+            let x;
+            if (align === 'left') { ctx.textAlign = 'left'; x = xs; }
+            else if (align === 'right') { ctx.textAlign = 'right'; x = xe; }
+            else { ctx.textAlign = 'center'; x = (xs + xe) / 2; }
+            ctx.fillText(text, x, y);
+        });
+
+        // signature placeholder boxes
+        sigContainer.querySelectorAll('[data-sig-card]').forEach(card => {
+            if (card.style.display === 'none') return;
+            const del = card.querySelector('input[name$="-DELETE"]');
+            if (del && del.checked) return;
+            const get = n => card.querySelector('[name$="-' + n + '"]');
+            const xs = parseFloat(get('x_start')?.value) || 0;
+            const xe = parseFloat(get('x_end')?.value) || 0;
+            const yt = parseFloat(get('y_top')?.value) || 0;
+            const mh = parseFloat(get('max_height')?.value) || 0;
+            const label = (get('label')?.value || '').trim() || (get('source_column')?.value || '').trim() || 'Signature';
+            ctx.save();
+            ctx.strokeStyle = '#f0a020';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.strokeRect(xs, yt, xe - xs, mh);
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#f0a020';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.font = '16px Georgia, serif';
+            ctx.fillText(label, xs + 4, yt + 4);
+            ctx.restore();
+        });
+    }
+
+    // wire up
+    container.querySelectorAll('[data-field-card]').forEach(initCard);
+    sigContainer.querySelectorAll('[data-sig-card]').forEach(initSigCard);
+    const gGroup = document.querySelector('.global-color-group');
+    if (gGroup) syncColorGroup(gGroup);
+    document.getElementById('add-field-btn').addEventListener('click', addField);
+    document.getElementById('add-sig-btn').addEventListener('click', addSig);
+    if (globalToggle) globalToggle.addEventListener('change', () => { syncTypo(); redraw(); });
+    document.getElementById('doc-template-form').addEventListener('input', redraw);
+
+    const fileInput = document.querySelector('input[name="template_file"]');
+    if (fileInput) fileInput.addEventListener('change', e => {
+        const f = e.target.files && e.target.files[0];
+        if (f) { const r = new FileReader(); r.onload = ev => loadBg(ev.target.result); r.readAsDataURL(f); }
+    });
+
+    {% if form.instance.pk and form.instance.template_file %}
+    loadBg("{% url 'documents:template_background' form.instance.pk %}");
+    {% else %}
+    canvas.style.display = 'none';
+    {% endif %}
+
+    syncTypo();
+});
+</script>
+{% endblock %}
+<!-- end document_form -->

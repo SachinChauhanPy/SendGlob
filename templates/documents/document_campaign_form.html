@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}New Document Campaign - {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="col-12 col-lg-9 mx-auto animated-fade-in">
+    <a href="{% url 'documents:list' %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to Documents
+    </a>
+    <h1 class="h3 fw-bold font-display m-0">New Document Campaign</h1>
+    <p class="text-secondary mb-4">Generate a personalized document for every recipient in your CSV, then email them automatically.</p>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" enctype="multipart/form-data" id="doc-campaign-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert-danger border-0 small py-2">{{ form.non_field_errors }}</div>{% endif %}
+
+                <!-- Campaign basics -->
+                <h2 class="h6 fw-bold font-display text-primary border-bottom pb-2 mb-3">
+                    <i data-lucide="settings" class="me-2"></i>Campaign Settings
+                </h2>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="{{ form.campaign_name.id_for_label }}" class="form-label small fw-semibold">{{ form.campaign_name.label }}</label>
+                        {{ form.campaign_name }}
+                        {% if form.campaign_name.errors %}<div class="text-danger small mt-1">{{ form.campaign_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.document_template.id_for_label }}" class="form-label small fw-semibold">{{ form.document_template.label }}</label>
+                        {{ form.document_template }}
+                        <div class="form-text small"><a href="{% url 'documents:create' %}" target="_blank" class="text-decoration-none">Create a new template <i data-lucide="external-link"></i></a></div>
+                        {% if form.document_template.errors %}<div class="text-danger small mt-1">{{ form.document_template.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.email_template.id_for_label }}" class="form-label small fw-semibold">{{ form.email_template.label }}</label>
+                        {{ form.email_template }}
+                        {% if form.email_template.errors %}<div class="text-danger small mt-1">{{ form.email_template.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.smtp_config.id_for_label }}" class="form-label small fw-semibold">{{ form.smtp_config.label }}</label>
+                        {{ form.smtp_config }}
+                        {% if form.smtp_config.errors %}<div class="text-danger small mt-1">{{ form.smtp_config.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.csv_file.id_for_label }}" class="form-label small fw-semibold">{{ form.csv_file.label }}</label>
+                        {{ form.csv_file }}
+                        <div class="form-text small">{{ form.csv_file.help_text }}</div>
+                        {% if form.csv_file.errors %}<div class="text-danger small mt-1">{{ form.csv_file.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            {{ form.auto_send }}
+                            <label for="{{ form.auto_send.id_for_label }}" class="form-check-label small">{{ form.auto_send.label }}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column Mapping -->
+                <div id="mapping-section" class="d-none mt-4">
+                    <h2 class="h6 fw-bold font-display text-success border-bottom pb-2 mb-3">
+                        <i data-lucide="arrow-right-left" class="me-2"></i>Column Mapping
+                        <span class="badge text-bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 ms-2">Optional</span>
+                    </h2>
+                    <div class="bg-body-tertiary rounded-4 p-4 border border-secondary border-opacity-25">
+                        <p class="small text-secondary mb-3">
+                            Map each template field to the correct CSV column header. Leave a field
+                            on its default if your CSV header matches the field name exactly.
+                        </p>
+                        <div id="mapping-rows" class="row g-2 mb-3"></div>
+
+                        <!-- Signature field info (read-only) -->
+                        <div id="sig-info-section" class="d-none mt-3">
+                            <p class="small fw-semibold text-secondary mb-2">
+                                <i data-lucide="pen-tool" class="me-1"></i>Signature fields (configured on the template):
+                            </p>
+                            <div id="sig-info-rows" class="row g-2"></div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="column_mapping" id="column_mapping_input" value="{}">
+                </div>
+
+                <!-- Scheduling -->
+                <h2 class="h6 fw-bold font-display text-info border-bottom pb-2 mb-3 mt-4">
+                    <i data-lucide="calendar-clock" class="me-2"></i>Scheduling
+                    <span class="badge text-bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 ms-2">Optional</span>
+                </h2>
+                {% include "emails/_schedule_fields.html" %}
+
+                <div class="border-top mt-4 pt-4 text-end">
+                    <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">Create Document Campaign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const templateSelect = document.getElementById('{{ form.document_template.id_for_label }}');
+    const csvInput      = document.getElementById('{{ form.csv_file.id_for_label }}');
+    const mappingSection = document.getElementById('mapping-section');
+    const mappingRows   = document.getElementById('mapping-rows');
+    const sigInfoSection = document.getElementById('sig-info-section');
+    const sigInfoRows   = document.getElementById('sig-info-rows');
+    const mappingInput  = document.getElementById('column_mapping_input');
+
+    let textFields = [];    // [{field_name, label}, ...]
+    let sigFields  = [];    // [{source_column, label}, ...]
+    let csvHeaders = [];    // strings
+
+    // Parse only the first line of the CSV to get headers.
+    function parseCSVHeaders(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const firstLine = (e.target.result || '').split(/\r?\n/)[0];
+                // Handle quoted headers (e.g. "First Name","Email")
+                const headers = [];
+                let current = '', inQuote = false;
+                for (const ch of firstLine) {
+                    if (ch === '"') { inQuote = !inQuote; }
+                    else if (ch === ',' && !inQuote) { headers.push(current.trim()); current = ''; }
+                    else { current += ch; }
+                }
+                if (current.trim()) headers.push(current.trim());
+                resolve(headers.filter(Boolean));
+            };
+            reader.onerror = () => resolve([]);
+            reader.readAsText(file);
+        });
+    }
+
+    // Fetch template field metadata from the server.
+    async function fetchTemplateFields(templateId) {
+        try {
+            const res = await fetch(`/documents/templates/${templateId}/fields/`);
+            if (!res.ok) return;
+            const data = await res.json();
+            textFields = data.text_fields || [];
+            sigFields  = data.signature_fields || [];
+        } catch (_) {
+            textFields = [];
+            sigFields  = [];
+        }
+        renderMapping();
+    }
+
+    // Build the mapping widget from current textFields + csvHeaders state.
+    function renderMapping() {
+        if (!textFields.length && !sigFields.length) {
+            mappingSection.classList.add('d-none');
+            return;
+        }
+        mappingSection.classList.remove('d-none');
+
+        // Text field mapping rows
+        mappingRows.innerHTML = '';
+        if (textFields.length) {
+            textFields.forEach(field => {
+                const col = document.createElement('div');
+                col.className = 'col-12 col-md-6';
+
+                // Build option list - put exact match first
+                const exactMatch = csvHeaders.find(
+                    h => h.toLowerCase() === field.field_name.toLowerCase()
+                );
+                let options = `<option value="">-- same as field name (${escHtml(field.field_name)}) --</option>`;
+                csvHeaders.forEach(h => {
+                    const selected = (exactMatch && h === exactMatch) ? ' selected' : '';
+                    options += `<option value="${escHtml(h)}"${selected}>${escHtml(h)}</option>`;
+                });
+
+                col.innerHTML = `
+                    <label class="form-label small fw-semibold mb-1">
+                        ${escHtml(field.label)}
+                        <span class="text-secondary fw-normal">(${escHtml(field.field_name)})</span>
+                    </label>
+                    <select class="form-select form-select-sm mapping-row"
+                            data-field-name="${escHtml(field.field_name)}">
+                        ${options}
+                    </select>`;
+                mappingRows.appendChild(col);
+            });
+        }
+
+        // Signature field info (read-only -- source_column is fixed on the template)
+        sigInfoRows.innerHTML = '';
+        if (sigFields.length) {
+            sigInfoSection.classList.remove('d-none');
+            sigFields.forEach(sf => {
+                const col = document.createElement('div');
+                col.className = 'col-12 col-md-6';
+                const present = csvHeaders.includes(sf.source_column);
+                const badge = present
+                    ? `<span class="badge text-bg-success ms-1">found in CSV</span>`
+                    : `<span class="badge text-bg-warning text-dark ms-1">not found in CSV</span>`;
+                col.innerHTML = `
+                    <div class="small border rounded-3 px-3 py-2 bg-body">
+                        <span class="fw-semibold">${escHtml(sf.label)}</span>
+                        <span class="text-secondary ms-1">reads column:</span>
+                        <code>${escHtml(sf.source_column)}</code>
+                        ${csvHeaders.length ? badge : ''}
+                    </div>`;
+                sigInfoRows.appendChild(col);
+            });
+        } else {
+            sigInfoSection.classList.add('d-none');
+        }
+    }
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // Serialize mapping on submit.
+    document.getElementById('doc-campaign-form').addEventListener('submit', () => {
+        const mapping = {};
+        mappingRows.querySelectorAll('.mapping-row').forEach(sel => {
+            const fieldName = sel.dataset.fieldName;
+            const csvCol    = sel.value;
+            if (csvCol) mapping[fieldName] = csvCol;
+        });
+        mappingInput.value = JSON.stringify(mapping);
+    });
+
+    // React to template selection.
+    templateSelect.addEventListener('change', () => {
+        const id = templateSelect.value;
+        if (id) fetchTemplateFields(id);
+        else {
+            textFields = [];
+            sigFields  = [];
+            renderMapping();
+        }
+    });
+
+    // React to CSV upload.
+    csvInput.addEventListener('change', async () => {
+        const file = csvInput.files[0];
+        csvHeaders = file ? await parseCSVHeaders(file) : [];
+        renderMapping();
+    });
+
+    // Trigger on load if a template is already selected (e.g. form re-render after error).
+    if (templateSelect.value) fetchTemplateFields(templateSelect.value);
+})();
+</script>
+{% endblock %}

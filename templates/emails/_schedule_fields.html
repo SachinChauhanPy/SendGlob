@@ -1,0 +1,58 @@
+{# Reusable three-mode scheduling fields. Expects `form` to use ScheduleFormMixin. #}
+<div class="row g-3" data-schedule-card>
+    <div class="col-md-6">
+        <label for="{{ form.schedule_type.id_for_label }}" class="form-label small fw-semibold">Schedule</label>
+        {{ form.schedule_type }}
+        <div class="form-text small">{{ form.schedule_type.help_text }}</div>
+        {% if form.schedule_type.errors %}<div class="text-danger small mt-1">{{ form.schedule_type.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="col-md-6" data-schedule-when hidden>
+        <label for="{{ form.schedule_time.id_for_label }}" class="form-label small fw-semibold">{{ form.schedule_time.label }}</label>
+        {{ form.schedule_time }}
+        {% if form.schedule_time.errors %}<div class="text-danger small mt-1">{{ form.schedule_time.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="col-md-6" data-schedule-mode="interval" hidden>
+        <label for="{{ form.interval_days.id_for_label }}" class="form-label small fw-semibold">Every N days</label>
+        {{ form.interval_days }}
+        <div class="form-text small">First run is this many days from now.</div>
+        {% if form.interval_days.errors %}<div class="text-danger small mt-1">{{ form.interval_days.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="col-md-6" data-schedule-mode="monthly" hidden>
+        <label for="{{ form.day_of_month.id_for_label }}" class="form-label small fw-semibold">Day of month</label>
+        {{ form.day_of_month }}
+        <div class="form-text small">1-31. Short months use their last valid day.</div>
+        {% if form.day_of_month.errors %}<div class="text-danger small mt-1">{{ form.day_of_month.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="col-md-6" data-schedule-mode="weekly" hidden>
+        <label for="{{ form.day_of_week.id_for_label }}" class="form-label small fw-semibold">Day of week</label>
+        {{ form.day_of_week }}
+        {% if form.day_of_week.errors %}<div class="text-danger small mt-1">{{ form.day_of_week.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="col-12" data-schedule-when hidden>
+        <div class="form-check">
+            {{ form.is_recurring }}
+            <label for="{{ form.is_recurring.id_for_label }}" class="form-check-label small fw-semibold">{{ form.is_recurring.label }}</label>
+            <div class="form-text small">If off, the schedule runs once.</div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    document.querySelectorAll('[data-schedule-card]').forEach(function (card) {
+        if (card.dataset.bound) return;
+        card.dataset.bound = '1';
+        var typeSel = card.querySelector('[data-schedule-type]');
+        if (!typeSel) return;
+        function sync() {
+            var v = typeSel.value;
+            var scheduled = v && v !== 'none';
+            card.querySelectorAll('[data-schedule-when]').forEach(function (el) { el.hidden = !scheduled; });
+            card.querySelectorAll('[data-schedule-mode]').forEach(function (el) {
+                el.hidden = el.getAttribute('data-schedule-mode') !== v;
+            });
+        }
+        typeSel.addEventListener('change', sync);
+        sync();
+    });
+})();
+</script>

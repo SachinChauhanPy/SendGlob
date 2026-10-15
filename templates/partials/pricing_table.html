@@ -1,0 +1,106 @@
+{% comment %}
+Shared pricing table, the single rendering of the billing catalogue.
+Included by both the landing page pricing section and /pricing/ so the two
+surfaces can never disagree. Context:
+  pricing  - core.pricing.get_public_pricing(request) structure
+  auto_buy - optional sanitized form id ("buy-pack-3"); auto-submits checkout
+             for a user who chose an item as a guest and just signed in.
+Cards use the theme-aware .price-card styles from static/css/public.css.
+{% endcomment %}
+
+{% if not pricing.has_items %}
+<div class="text-center py-5">
+    <p class="fs-5 text-body mb-2">Pricing is being finalised.</p>
+    <p class="text-secondary mb-0">Sign up free to try SendGlob, or check back soon for credit packs and plans.</p>
+    <a href="{% url 'account_signup' %}" class="btn btn-primary mt-3">Get started free</a>
+</div>
+{% else %}
+
+<div class="row justify-content-center mb-4">
+    <div class="col-12 col-lg-9 text-center">
+        <p class="text-secondary mb-0">
+            Every account starts with <span class="fw-semibold text-body">{{ pricing.free_credits }} free credits</span>.
+            Sending email never costs credits; one credit generates one personalised document.
+        </p>
+    </div>
+</div>
+
+{% if pricing.packs %}
+<div class="d-flex align-items-baseline justify-content-between flex-wrap gap-2 mb-3">
+    <h3 class="h5 fw-bold font-display text-body m-0">Pay as you go</h3>
+    <span class="small text-secondary">One-time credit packs. No subscription, credits never expire.</span>
+</div>
+<div class="row g-3 mb-5 justify-content-center">
+    {% for p in pricing.packs %}
+    <div class="col-sm-6 col-lg-4">
+        <div class="price-card">
+            <span class="price-kicker">{{ p.name }}</span>
+            <div class="price-amount my-2">{{ p.credits }} <span class="unit">credits</span></div>
+            <div class="text-secondary mb-3">{{ p.price }} {{ p.currency }} <span class="small">one-time</span></div>
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'billing:checkout_pack' p.pk %}" id="buy-pack-{{ p.pk }}" class="mt-auto">
+                {% csrf_token %}
+                <button class="btn btn-primary w-100" type="submit">Buy {{ p.name }}</button>
+            </form>
+            {% else %}
+            <a href="{% url 'account_signup' %}?next={% filter urlencode %}{% url 'pages:pricing' %}?buy=pack-{{ p.pk }}{% endfilter %}"
+               class="btn btn-primary w-100 mt-auto">Buy {{ p.name }}</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if pricing.plans %}
+<div class="d-flex align-items-baseline justify-content-between flex-wrap gap-2 mb-3">
+    <h3 class="h5 fw-bold font-display text-body m-0">Monthly plans</h3>
+    <span class="small text-secondary">A credit allowance plus workflow limits raised, every month.</span>
+</div>
+<div class="row g-3 justify-content-center">
+    {% for p in pricing.plans %}
+    <div class="col-sm-6 col-lg-4">
+        <div class="price-card">
+            <span class="price-kicker">Subscription</span>
+            <div class="price-name mt-1">{{ p.tier }}</div>
+            <div class="price-amount my-2">{{ p.price }} <span class="unit">{{ p.currency }}/mo</span></div>
+            <ul class="price-features mb-3">
+                <li><i data-lucide="check"></i>{{ p.credits_per_cycle }} credits every month</li>
+                <li><i data-lucide="check"></i>Up to {{ p.max_smtp_configs }} SMTP account{{ p.max_smtp_configs|pluralize }}</li>
+                {% if p.recurring_scheduling %}<li><i data-lucide="check"></i>Recurring campaign scheduling</li>{% endif %}
+                {% if p.full_analytics %}<li><i data-lucide="check"></i>Full campaign analytics</li>{% endif %}
+                {% if p.priority_support %}<li><i data-lucide="check"></i>Priority email support</li>{% endif %}
+            </ul>
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'billing:checkout_plan' p.pk %}" id="buy-plan-{{ p.pk }}" class="mt-auto">
+                {% csrf_token %}
+                <button class="btn btn-outline-primary w-100" type="submit">Start {{ p.tier }}</button>
+            </form>
+            {% else %}
+            <a href="{% url 'account_signup' %}?next={% filter urlencode %}{% url 'pages:pricing' %}?buy=plan-{{ p.pk }}{% endfilter %}"
+               class="btn btn-outline-primary w-100 mt-auto">Start {{ p.tier }}</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="text-center mt-4">
+    <p class="small text-secondary mb-0">
+        {{ pricing.note }}
+        <span class="mx-2">&middot;</span>
+        SendGlob never charges per email; sending volume depends on your SMTP provider's limits.
+    </p>
+</div>
+
+{% if auto_buy %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('{{ auto_buy }}');
+    if (form) { form.submit(); }
+});
+</script>
+{% endif %}
+
+{% endif %}

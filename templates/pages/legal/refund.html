@@ -1,0 +1,41 @@
+{% extends "pages/legal/legal_base.html" %}
+{% block title %}Refund &amp; Cancellation Policy - SendGlob{% endblock %}
+{% block legal_title %}Refund &amp; Cancellation Policy{% endblock %}
+{% block legal_body %}
+
+<h2 class="h5 fw-bold mt-4 mb-2">1. Credit packs</h2>
+<p>Credit packs are prepaid digital goods delivered instantly to your account.
+Once credits are delivered they are generally non-refundable. Unused credits do
+not expire while your account remains open.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">2. Exceptions: when we do refund</h2>
+<p>We will refund a payment in full where the charge failed to deliver credits,
+where the same purchase was charged twice, or where a charge was unauthorized.
+Report the issue to {{ contact_email }} with the payment reference and we will
+investigate promptly.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">3. Subscriptions</h2>
+<p>Subscription plans renew automatically each billing cycle. You can cancel at
+any time from the billing dashboard; cancellation takes effect at the end of the
+current period and there is no pro-rata refund for the remainder of a period
+already charged. Credits already granted for the current period remain usable.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">4. How refunds are paid</h2>
+<p>Approved refunds are issued to the original payment method through Razorpay.
+Processing timelines depend on your bank or card issuer, typically 5 to 10
+business days after the refund is initiated.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">5. How to request a refund</h2>
+<p>Email {{ contact_email }} or use the
+<a href="{% url 'pages:contact' %}">contact form</a> with your account email,
+the payment reference (from your receipt), and a short description of the
+issue. We aim to respond within 3 business days.</p>
+
+<h2 class="h5 fw-bold mt-4 mb-2">6. Account termination</h2>
+<p>If we terminate your account for a violation of the
+<a href="{% url 'pages:acceptable_use' %}">Acceptable Use and Anti-Spam
+Policy</a>, remaining credits are forfeited. If you close your account in good
+standing, you may request a review of any unused paid credits at our reasonable
+discretion.</p>
+
+{% endblock %}

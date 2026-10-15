@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - SendGlob{% endblock %}
+
+{% block content %}
+<div class="col-12 col-lg-11 col-xl-10 mx-auto animated-fade-in">
+    <a href="{% url 'certificates:list' %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to Templates
+    </a>
+    <h1 class="h3 fw-bold font-display m-0">{{ title }}</h1>
+    <p class="text-secondary mb-4">Configure text alignment, fonts, and size thresholds for automated certificate drawing</p>
+
+    <div class="row g-4">
+        <!-- Form panel -->
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <form method="POST" enctype="multipart/form-data" id="cert-template-form">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger border-0 small py-2">
+                            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="{{ form.name.id_for_label }}" class="form-label small fw-semibold">Template Name</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ form.image.id_for_label }}" class="form-label small fw-semibold">Background Image</label>
+                                {{ form.image }}
+                                <div class="form-text small">Upload a clean blank certificate layout in JPG or PNG.</div>
+                                {% if form.image.errors %}<div class="text-danger small mt-1">{{ form.image.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <h2 class="h6 fw-bold text-primary border-bottom pb-2 mb-2 mt-4"><i data-lucide="ruler" class="me-2"></i>Text Alignment Baseline</h2>
+                        <p class="text-secondary small">
+                            <i data-lucide="info" class="text-primary me-1"></i><strong>Tip:</strong> Open your template image in an editor to find pixel coordinates. The name is centered horizontally between <code>X Start</code> and <code>X End</code>, and placed vertically at <code>Y Baseline</code>.
+                        </p>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.x_start.id_for_label }}" class="form-label small fw-semibold">X Start (left)</label>
+                                {{ form.x_start }}
+                                {% if form.x_start.errors %}<div class="text-danger small mt-1">{{ form.x_start.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.x_end.id_for_label }}" class="form-label small fw-semibold">X End (right)</label>
+                                {{ form.x_end }}
+                                {% if form.x_end.errors %}<div class="text-danger small mt-1">{{ form.x_end.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ form.y_coordinate.id_for_label }}" class="form-label small fw-semibold">Y Baseline (vertical)</label>
+                                {{ form.y_coordinate }}
+                                {% if form.y_coordinate.errors %}<div class="text-danger small mt-1">{{ form.y_coordinate.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <h2 class="h6 fw-bold text-primary border-bottom pb-2 mb-3 mt-4"><i data-lucide="palette" class="me-2"></i>Typography &amp; Colors</h2>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.font_size.id_for_label }}" class="form-label small fw-semibold">Font Size (px)</label>
+                                {{ form.font_size }}
+                                {% if form.font_size.errors %}<div class="text-danger small mt-1">{{ form.font_size.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.font_color.id_for_label }}" class="form-label small fw-semibold">Font Color</label>
+                                <div class="input-group">
+                                    <input type="color" class="form-control form-control-color" id="font_color_picker" style="width: 48px; height: 38px; padding: 6px; flex: 0 0 auto;" title="Choose color">
+                                    {{ form.font_color }}
+                                </div>
+                                {% if form.font_color.errors %}<div class="text-danger small mt-1">{{ form.font_color.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ form.font_file.id_for_label }}" class="form-label small fw-semibold">Custom Font File (optional .TTF)</label>
+                                {{ form.font_file }}
+                                <div class="form-text small">Upload a TrueType font (.ttf) for the name. If blank, the elegant <strong>Playfair Display</strong> font is used.</div>
+                                {% if form.font_file.errors %}<div class="text-danger small mt-1">{{ form.font_file.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="border-top mt-4 pt-4 text-end">
+                            <a href="{% url 'certificates:list' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-4">Save Template</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live preview -->
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 sticky-lg-top" style="top: 1.5rem;">
+                <div class="card-body">
+                    <h2 class="h5 fw-bold font-display mb-3">Live Coordinates Preview</h2>
+                    {% if form.instance.pk %}
+                        <div class="bg-body-tertiary border rounded-3 overflow-hidden text-center mb-3">
+                            <img id="preview-image" src="{% url 'certificates:preview' form.instance.pk %}" class="img-fluid w-100 object-fit-contain" alt="Live preview">
+                        </div>
+                        <p class="text-secondary small text-center mb-0"><i data-lucide="info" class="me-1"></i>Preview shows name <strong>'John Doe'</strong>. Change values to see them adjust live.</p>
+                    {% else %}
+                        <div class="bg-body-tertiary border rounded-3 p-5 text-center text-secondary small">
+                            <i data-lucide="image" class="opacity-50 mb-3" style="font-size:2.5rem;"></i>
+                            <p class="m-0">Live coordinate mapping appears here after saving the template for the first time.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const colorPicker = document.getElementById('font_color_picker');
+        const colorInput = document.getElementById('id_font_color');
+
+        if (colorInput && colorPicker) {
+            // Set initial picker color if it is a valid hex
+            if (/^#[0-9A-Fa-f]{6}$/.test(colorInput.value)) {
+                colorPicker.value = colorInput.value;
+            }
+
+            // Sync picker -> text input
+            colorPicker.addEventListener('input', (e) => {
+                colorInput.value = e.target.value;
+                colorInput.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            // Sync text input -> picker
+            colorInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                    colorPicker.value = val;
+                }
+            });
+        }
+
+        {% if form.instance.pk %}
+        const previewImg = document.getElementById('preview-image');
+
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        const baseUrl = "{% url 'certificates:preview' form.instance.pk %}";
+        const reloadPreview = debounce(() => {
+            const params = new URLSearchParams({
+                x_start: document.getElementById('id_x_start').value,
+                x_end: document.getElementById('id_x_end').value,
+                y_coordinate: document.getElementById('id_y_coordinate').value,
+                font_size: document.getElementById('id_font_size').value,
+                font_color: document.getElementById('id_font_color').value,
+                t: Date.now()
+            });
+            previewImg.src = `${baseUrl}?${params.toString()}`;
+        }, 300);
+
+        ['id_x_start', 'id_x_end', 'id_y_coordinate', 'id_font_size', 'id_font_color'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', reloadPreview);
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "opsconsole/base_ops.html" %}
+{% block title %}Audit log - Ops Console{% endblock %}
+
+{% block content %}
+<h1 class="h4 fw-bold mb-2">Audit log</h1>
+<p class="text-secondary small mb-4">Append-only record of operator actions. Entries are never edited or deleted.</p>
+
+<div class="card bg-body border-secondary">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0 align-middle">
+                <thead>
+                    <tr class="text-secondary small">
+                        <th class="bg-body">When</th>
+                        <th class="bg-body">Actor</th>
+                        <th class="bg-body">Action</th>
+                        <th class="bg-body">Target</th>
+                        <th class="bg-body">Reason</th>
+                        <th class="bg-body">IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td class="bg-body text-body small">{{ row.created_at|date:"M j, Y H:i" }}</td>
+                        <td class="bg-body text-body small">{{ row.actor.email }}</td>
+                        <td class="bg-body text-body small"><code>{{ row.action }}</code></td>
+                        <td class="bg-body text-secondary small">{% if row.target_type %}{{ row.target_type }}#{{ row.target_id }}{% else %}-{% endif %}</td>
+                        <td class="bg-body text-secondary small">{{ row.reason|default:"-" }}</td>
+                        <td class="bg-body text-secondary small">{{ row.ip_address|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="bg-body text-secondary text-center py-4">No operator actions recorded yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

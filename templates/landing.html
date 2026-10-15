@@ -1,0 +1,724 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}SendGlob - Bulk email and certificate automation from your own inbox{% endblock %}
+
+{% block meta %}
+<meta name="description" content="Send personalized bulk email from your own SMTP account and turn a CSV into signed certificate PDFs. Credit-based pricing, email delivery is free.">
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SendGlob">
+<meta property="og:title" content="SendGlob - Bulk email and certificate automation from your own inbox">
+<meta property="og:description" content="Send personalized bulk email from your own SMTP account and turn a CSV into signed certificate PDFs. Credit-based pricing, email delivery is free.">
+<meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}/">
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/favicon-192.png' %}">
+{% endblock %}
+
+{# Strip <main> chrome so the landing page can own the full viewport width. #}
+{% block main_classes %}p-0 m-0{% endblock %}
+{% block messages %}{% endblock %}
+
+{% block extra_css %}
+{# Shared public shell: sticky gradient nav, footer, section typography, pricing cards. #}
+<link rel="stylesheet" href="{% static 'css/public.css' %}">
+<style>
+    /* ============================================================
+       Landing page styles, scoped to .landing so nothing leaks into
+       the rest of the app. Shell styles live in public.css.
+       Display type is Ubuntu (the font base.html actually loads).
+       ============================================================ */
+    .landing { background: var(--bs-body-bg); color: var(--bs-body-color); }
+    .landing section { scroll-margin-top: 80px; }
+
+    /* Hero ----------------------------------------------------- */
+    .landing-hero {
+        position: relative;
+        background:
+            radial-gradient(ellipse 60% 40% at 20% 0%, rgba(0, 120, 212, 0.10), transparent 70%),
+            radial-gradient(ellipse 50% 40% at 90% 30%, rgba(0, 164, 239, 0.08), transparent 70%),
+            var(--bs-body-bg);
+        overflow: hidden;
+    }
+    .landing-hero::before {
+        content: "";
+        position: absolute; inset: 0;
+        background-image:
+            linear-gradient(rgba(0, 120, 212, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 120, 212, 0.04) 1px, transparent 1px);
+        background-size: 32px 32px;
+        mask-image: linear-gradient(180deg, #000 0%, #000 50%, transparent 100%);
+        -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 50%, transparent 100%);
+        pointer-events: none;
+    }
+    .landing-hero > * { position: relative; }
+
+    .eyebrow {
+        display: inline-flex; align-items: center; gap: .5rem;
+        padding: .35rem .85rem;
+        background: rgba(0, 120, 212, 0.08);
+        color: #0078D4;
+        border: 1px solid rgba(0, 120, 212, 0.18);
+        border-radius: 999px;
+        font-size: .8rem; font-weight: 600;
+    }
+    .hero-headline {
+        font-family: 'Ubuntu', sans-serif;
+        font-weight: 700;
+        font-size: clamp(2.1rem, 5vw, 3.5rem);
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+    }
+    .hero-headline .accent {
+        background: linear-gradient(135deg, #0078D4 0%, #00A4EF 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Mockup window (CSS browser frame + fake dashboard).
+       All surfaces use theme variables so the mockup reads as a
+       "screenshot of the actual app" in light or dark mode. */
+    .mockup-window {
+        background: var(--bs-body-bg);
+        border-radius: 14px;
+        box-shadow:
+            0 50px 100px -20px rgba(0, 60, 150, 0.20),
+            0 30px 60px -30px rgba(0, 30, 80, 0.25),
+            0 0 0 1px var(--bs-border-color);
+        overflow: hidden;
+    }
+    .mockup-titlebar {
+        display: flex; align-items: center; gap: .5rem;
+        padding: .75rem 1rem;
+        background: var(--bs-tertiary-bg);
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    .mockup-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .mockup-dot.red { background: #ff5f57; }
+    .mockup-dot.yellow { background: #febc2e; }
+    .mockup-dot.green { background: #28c840; }
+    .mockup-url {
+        margin-left: .75rem; flex: 1;
+        background: var(--bs-body-bg);
+        border-radius: 6px;
+        padding: .25rem .75rem;
+        font-size: .75rem;
+        color: var(--bs-secondary-color);
+        border: 1px solid var(--bs-border-color);
+    }
+    .mockup-body {
+        background: var(--bs-tertiary-bg);
+        padding: 1.25rem;
+        min-height: 320px;
+    }
+    .mockup-stat {
+        background: var(--bs-body-bg);
+        border-radius: 10px;
+        padding: .75rem .9rem;
+        border-left: 3px solid;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .mockup-stat .label {
+        font-size: .65rem; color: var(--bs-secondary-color);
+        font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .mockup-stat .value {
+        font-family: 'Ubuntu', sans-serif; font-size: 1.35rem;
+        font-weight: 700; line-height: 1.2;
+        color: var(--bs-body-color);
+    }
+    .mockup-row {
+        display: flex; align-items: center; gap: .75rem;
+        padding: .55rem .75rem;
+        background: var(--bs-body-bg);
+        border-radius: 8px;
+        font-size: .78rem;
+        margin-bottom: .4rem;
+        color: var(--bs-body-color);
+    }
+    .mockup-row .pill {
+        font-size: .65rem;
+        padding: .15rem .5rem;
+        border-radius: 999px;
+        font-weight: 600;
+    }
+    .mockup-bar { height: 4px; border-radius: 99px; background: var(--bs-secondary-bg); overflow: hidden; }
+    .mockup-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #0078D4, #00A4EF); }
+
+    /* Feature cards -------------------------------------------- */
+    .feature-card {
+        background: var(--bs-body-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 16px;
+        padding: 1.75rem;
+        height: 100%;
+        transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+    }
+    .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 40px -16px rgba(0, 60, 150, 0.18);
+        border-color: rgba(0, 120, 212, 0.35);
+    }
+    .feature-icon {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Step cards ----------------------------------------------- */
+    .step-card { position: relative; padding: 1.75rem 1.5rem; }
+    .step-number {
+        font-family: 'Ubuntu', sans-serif;
+        font-size: 3rem; font-weight: 700;
+        line-height: 1;
+        background: linear-gradient(135deg, #0078D4 0%, #00A4EF 100%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent;
+        opacity: .85;
+    }
+
+    /* Use case mini-cards -------------------------------------- */
+    .use-case {
+        background: var(--bs-body-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 14px;
+        padding: 1.25rem;
+        text-align: center;
+        height: 100%;
+        transition: border-color .2s ease, transform .2s ease;
+    }
+    .use-case:hover { border-color: rgba(0, 120, 212, 0.4); transform: translateY(-2px); }
+    .use-case .icon {
+        width: 44px; height: 44px;
+        margin: 0 auto .75rem;
+        border-radius: 12px;
+        background: rgba(0, 120, 212, 0.08);
+        color: #0078D4;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    /* FAQ ------------------------------------------------------ */
+    .faq-item {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 12px;
+        margin-bottom: .75rem;
+        background: var(--bs-body-bg);
+    }
+    .faq-item button.accordion-button {
+        border-radius: 12px !important;
+        font-weight: 600;
+        background: var(--bs-body-bg);
+        color: var(--bs-body-color);
+        box-shadow: none !important;
+    }
+    .faq-item button.accordion-button:not(.collapsed) {
+        background: rgba(0, 120, 212, 0.06);
+        color: #0078D4;
+    }
+    .faq-item .accordion-body { color: var(--bs-secondary-color); }
+
+    /* CTA banner ----------------------------------------------- */
+    .cta-banner {
+        background:
+            radial-gradient(circle at 80% 30%, rgba(255,255,255,0.18), transparent 50%),
+            radial-gradient(circle at 20% 80%, rgba(255,255,255,0.10), transparent 60%),
+            linear-gradient(135deg, #0078D4 0%, #00A4EF 100%);
+        color: #fff;
+        border-radius: 24px;
+        padding: 3.5rem 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Theme-aware alternating section background */
+    .section-alt-bg { background: var(--bs-tertiary-bg); }
+
+    /* Dark mode nudges for low-opacity tints ------------------- */
+    [data-bs-theme="dark"] .eyebrow {
+        background: rgba(0, 120, 212, 0.18);
+        border-color: rgba(0, 120, 212, 0.38);
+    }
+    [data-bs-theme="dark"] .use-case .icon {
+        background: rgba(0, 120, 212, 0.18);
+    }
+    [data-bs-theme="dark"] .faq-item button.accordion-button:not(.collapsed) {
+        background: rgba(0, 120, 212, 0.16);
+    }
+    [data-bs-theme="dark"] .comparison-old {
+        background: rgba(242, 80, 34, 0.10) !important;
+        border-color: rgba(242, 80, 34, 0.28) !important;
+    }
+    [data-bs-theme="dark"] .comparison-new {
+        background: rgba(127, 186, 0, 0.10) !important;
+        border-color: rgba(127, 186, 0, 0.30) !important;
+    }
+
+    @media (max-width: 767.98px) {
+        .landing-hero { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+        .mockup-body { padding: .85rem; min-height: 240px; }
+        .cta-banner { padding: 2.5rem 1.25rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="landing">
+
+    <!-- ===================== TOP NAV (shared public header) ===================== -->
+    {% include "partials/public_header.html" %}
+
+    <!-- ===================== HERO ===================== -->
+    <section class="landing-hero py-5 py-md-6">
+        <div class="container py-md-4">
+            <div class="row align-items-center g-5">
+                <div class="col-12 col-lg-6">
+                    <span class="eyebrow mb-3"><i data-lucide="zap"></i> Email + documents, one dashboard</span>
+                    <h1 class="hero-headline mb-3">
+                        Personalized campaigns. <br>
+                        Signed certificates at scale. <br>
+                        <span class="accent">From your own inbox.</span>
+                    </h1>
+                    <p class="lead text-secondary mb-4" style="max-width: 540px;">
+                        SendGlob sends bulk email through your own account, whether Gmail, Yahoo, Outlook, or a custom server, and turns a recipient spreadsheet into personalised, signature-stamped certificate PDFs. Sending is paced automatically and failures retry on their own, so your provider limits are always respected.
+                    </p>
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                        <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg fw-semibold px-4 d-inline-flex align-items-center gap-2">
+                            Get started free <i data-lucide="arrow-right"></i>
+                        </a>
+                        <a href="#how-it-works" class="btn btn-outline-secondary btn-lg fw-semibold px-4 d-inline-flex align-items-center gap-2">
+                            <i data-lucide="play"></i> See how it works
+                        </a>
+                    </div>
+                    <p class="small text-secondary mb-0">
+                        <i data-lucide="circle-check" class="text-success me-1"></i> {{ pricing.free_credits }} free credits on signup
+                        <span class="mx-2">&middot;</span>
+                        <i data-lucide="circle-check" class="text-success me-1"></i> Email sending is free
+                        <span class="mx-2">&middot;</span>
+                        <i data-lucide="circle-check" class="text-success me-1"></i> No credit card required
+                    </p>
+                </div>
+
+                <!-- CSS-only dashboard mockup -->
+                <div class="col-12 col-lg-6">
+                    <div class="mockup-window">
+                        <div class="mockup-titlebar">
+                            <span class="mockup-dot red"></span>
+                            <span class="mockup-dot yellow"></span>
+                            <span class="mockup-dot green"></span>
+                            <span class="mockup-url"><i data-lucide="lock" class="me-1" style="font-size:.6rem;"></i>sendglob.com/dashboard</span>
+                        </div>
+                        <div class="mockup-body">
+                            <div class="row g-2 mb-3">
+                                <div class="col-4">
+                                    <div class="mockup-stat" style="border-left-color:#0078D4;">
+                                        <div class="label">Sent</div>
+                                        <div class="value">8,241</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="mockup-stat" style="border-left-color:#7FBA00;">
+                                        <div class="label">Opened</div>
+                                        <div class="value">5,103</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="mockup-stat" style="border-left-color:#FFB900;">
+                                        <div class="label">Documents</div>
+                                        <div class="value">842</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mockup-row">
+                                <span class="fw-semibold flex-grow-1 text-truncate"><i data-lucide="mails" class="text-primary me-2"></i>October newsletter</span>
+                                <div class="mockup-bar" style="width: 100px;"><span style="width: 92%;"></span></div>
+                                <span class="pill" style="background: rgba(127,186,0,0.15); color:#5c8a00;">92% opened</span>
+                            </div>
+                            <div class="mockup-row">
+                                <span class="fw-semibold flex-grow-1 text-truncate"><i data-lucide="award" class="text-success me-2"></i>Workshop certificates</span>
+                                <div class="mockup-bar" style="width: 100px;"><span style="width: 100%;"></span></div>
+                                <span class="pill" style="background: rgba(127,186,0,0.15); color:#5c8a00;">Done</span>
+                            </div>
+                            <div class="mockup-row">
+                                <span class="fw-semibold flex-grow-1 text-truncate"><i data-lucide="mail" class="text-primary me-2"></i>Product launch</span>
+                                <div class="mockup-bar" style="width: 100px;"><span style="width: 47%;"></span></div>
+                                <span class="pill" style="background: rgba(0,120,212,0.15); color:#0078D4;">Sending</span>
+                            </div>
+                            <div class="mockup-row" style="opacity:.65;">
+                                <span class="fw-semibold flex-grow-1 text-truncate"><i data-lucide="calendar-clock" class="text-secondary me-2"></i>Monthly digest</span>
+                                <div class="mockup-bar" style="width: 100px;"><span style="width: 0%;"></span></div>
+                                <span class="pill" style="background: rgba(108,117,125,0.15); color:#6c757d;">Scheduled</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== CAPABILITY STRIP ===================== -->
+    <section class="py-4 border-bottom section-alt-bg">
+        <div class="container">
+            <div class="row g-4 text-center">
+                <div class="col-6 col-md-3">
+                    <div class="font-display fw-bold fs-3 text-primary">SMTP</div>
+                    <div class="small text-secondary">Any provider, your reputation</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="font-display fw-bold fs-3 text-primary">CSV</div>
+                    <div class="small text-secondary">Personalization at scale</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="font-display fw-bold fs-3 text-primary">PDF</div>
+                    <div class="small text-secondary">Signed certificates</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="font-display fw-bold fs-3 text-primary">AI</div>
+                    <div class="small text-secondary">Campaign copy in seconds</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== PROBLEM / SOLUTION ===================== -->
+    <section class="py-5 py-md-6">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-12 col-lg-8">
+                    <span class="section-eyebrow">Why SendGlob</span>
+                    <h2 class="section-headline mb-3">You shouldn't need four tools to run one workshop</h2>
+                    <p class="lead text-secondary">
+                        Most teams stitch together a bulk mailer, a certificate design tool, a CSV cleaner, and an automation layer to glue them. Four subscriptions, fragile hand-offs, and per-email fees that grow faster than your audience.
+                    </p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-12 col-md-6">
+                    <div class="p-4 rounded-4 border h-100 comparison-old" style="background: rgba(242,80,34,0.04); border-color: rgba(242,80,34,0.18) !important;">
+                        <h3 class="h6 fw-bold font-display mb-3"><i data-lucide="circle-x" class="text-danger me-2"></i>The old way</h3>
+                        <ul class="small text-secondary mb-0 ps-3">
+                            <li class="mb-2">Mailchimp or SendGrid for email ($30 to $200/mo plus per-email fees)</li>
+                            <li class="mb-2">Sertifier or Canva for certificate design ($29 to $99/mo)</li>
+                            <li class="mb-2">Manual CSV cleanup between every tool</li>
+                            <li class="mb-2">Zapier to glue it together (another subscription, more failure points)</li>
+                            <li class="mb-0">Your sender reputation tied to a shared IP pool</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="p-4 rounded-4 border h-100 comparison-new" style="background: rgba(127,186,0,0.04); border-color: rgba(127,186,0,0.25) !important;">
+                        <h3 class="h6 fw-bold font-display mb-3"><i data-lucide="circle-check" class="text-success me-2"></i>The SendGlob way</h3>
+                        <ul class="small text-secondary mb-0 ps-3">
+                            <li class="mb-2">One dashboard for campaigns, certificates, and signatures</li>
+                            <li class="mb-2">Send from your own SMTP account, so your reputation stays yours</li>
+                            <li class="mb-2">AI drafts the copy; documents render straight from your CSV</li>
+                            <li class="mb-2">Async queue with automatic retry and provider-aware throttling</li>
+                            <li class="mb-0">Credits only for generated documents. Email is free, always</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== FEATURES ===================== -->
+    <section id="features" class="py-5 py-md-6 section-alt-bg">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-12 col-lg-8">
+                    <span class="section-eyebrow">Features</span>
+                    <h2 class="section-headline mb-3">Everything the workflow needs, nothing it doesn't</h2>
+                    <p class="lead text-secondary">Six capabilities that replace an entire stack of marketing tools.</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: rgba(0,120,212,0.10); color: #0078D4;">
+                            <i data-lucide="mails"></i>
+                        </div>
+                        <h3 class="h5 fw-bold font-display mb-2">Bulk email from your own account</h3>
+                        <p class="text-secondary mb-0">
+                            Connect any SMTP provider once. SendGlob sends through your account, so deliverability and sender reputation stay in your hands. No shared IP pools, no warm-up dance.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: rgba(127,186,0,0.12); color: #6ba100;">
+                            <i data-lucide="award"></i>
+                        </div>
+                        <h3 class="h5 fw-bold font-display mb-2">Certificates from a CSV</h3>
+                        <p class="text-secondary mb-0">
+                            Upload your design, mark where each field sits, and SendGlob centres every participant's name between your coordinates, in your fonts. Hundreds of personalised PDFs in one run.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: rgba(255,185,0,0.15); color: #e6a700;">
+                            <i data-lucide="pen-tool"></i>
+                        </div>
+                        <h3 class="h5 fw-bold font-display mb-2">Signatures that look hand-placed</h3>
+                        <p class="text-secondary mb-0">
+                            Upload a signature photo once; the background is removed automatically. Then sign per recipient from a CSV column, so the right signatory lands on the right certificate.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: rgba(0,164,239,0.12); color: #00A4EF;">
+                            <i data-lucide="wand-sparkles"></i>
+                        </div>
+                        <h3 class="h5 fw-bold font-display mb-2">AI-drafted copy in seconds</h3>
+                        <p class="text-secondary mb-0">
+                            Describe your campaign in plain English and Gemini drafts the subject line, preheader, headline, body, and CTA. Tweak in the live preview and send. No prompt engineering needed.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: rgba(136,84,208,0.12); color: #8854d0;">
+                            <i data-lucide="calendar-clock"></i>
+                        </div>
+                        <h3 class="h5 fw-bold font-display mb-2">Schedule once, or repeat</h3>
+                        <p class="text-secondary mb-0">
+                            Set a campaign for later, or make it recur weekly or monthly. Campaigns lock shortly before a run to protect what goes out, and you get a reminder email before it fires.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: rgba(242,80,34,0.10); color: #F25022;">
+                            <i data-lucide="chart-line"></i>
+                        </div>
+                        <h3 class="h5 fw-bold font-display mb-2">Live tracking and retry</h3>
+                        <p class="text-secondary mb-0">
+                            Watch send progress in real time with open tracking built in. Failed deliveries retry automatically, and throttling keeps you inside your provider's limits.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== HOW IT WORKS ===================== -->
+    <section id="how-it-works" class="py-5 py-md-6">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-12 col-lg-8">
+                    <span class="section-eyebrow">How it works</span>
+                    <h2 class="section-headline mb-3">From signup to sent in under five minutes</h2>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-12 col-md-4">
+                    <div class="step-card">
+                        <div class="step-number">01</div>
+                        <h3 class="h5 fw-bold font-display mt-3 mb-2">Connect your SMTP account</h3>
+                        <p class="text-secondary mb-0">Enter your SMTP host, port, and app password. It is encrypted the moment you save it, and you can test the connection with one click.</p>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="step-card">
+                        <div class="step-number">02</div>
+                        <h3 class="h5 fw-bold font-display mt-3 mb-2">Prepare content and recipients</h3>
+                        <p class="text-secondary mb-0">Pick a template or let AI draft one. For certificates, upload your design, mark the field coordinates, add a signature. Then drop in your recipient CSV.</p>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="step-card">
+                        <div class="step-number">03</div>
+                        <h3 class="h5 fw-bold font-display mt-3 mb-2">Send now, or schedule it</h3>
+                        <p class="text-secondary mb-0">Hit send, or set a schedule and let it recur. The queue handles throttling, retries, and document generation while progress updates live in the dashboard.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== USE CASES ===================== -->
+    <section class="py-5 py-md-6 section-alt-bg">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-12 col-lg-8">
+                    <span class="section-eyebrow">Built for</span>
+                    <h2 class="section-headline mb-3">Teams that send a lot, and care about every send</h2>
+                </div>
+            </div>
+            <div class="row g-3 justify-content-center">
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="use-case">
+                        <div class="icon"><i data-lucide="presentation"></i></div>
+                        <div class="fw-semibold small">Online instructors</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="use-case">
+                        <div class="icon"><i data-lucide="code"></i></div>
+                        <div class="fw-semibold small">Hackathon organisers</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="use-case">
+                        <div class="icon"><i data-lucide="users"></i></div>
+                        <div class="fw-semibold small">Workshop hosts</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="use-case">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <div class="fw-semibold small">HR &amp; L&amp;D teams</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="use-case">
+                        <div class="icon"><i data-lucide="messages-square"></i></div>
+                        <div class="fw-semibold small">Community managers</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="use-case">
+                        <div class="icon"><i data-lucide="graduation-cap"></i></div>
+                        <div class="fw-semibold small">Schools &amp; universities</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== SECURITY BAND ===================== -->
+    <section class="py-5 py-md-6">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-12 col-lg-8">
+                    <span class="section-eyebrow">Trust</span>
+                    <h2 class="section-headline mb-3">Security you can verify, not just read about</h2>
+                    <p class="lead text-secondary">Every claim below describes a control that is implemented today. The security page documents each one.</p>
+                </div>
+            </div>
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="trust-tile">
+                        <div class="icon"><i data-lucide="key-round"></i></div>
+                        <h3 class="h6 fw-bold font-display mb-1">Encrypted at rest</h3>
+                        <p class="small text-secondary mb-0">Your credentials and signature files are encrypted before they are ever stored.</p>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="trust-tile">
+                        <div class="icon"><i data-lucide="fingerprint"></i></div>
+                        <h3 class="h6 fw-bold font-display mb-1">Private file delivery</h3>
+                        <p class="small text-secondary mb-0">Your documents and signatures can only be opened from your own account, never from a public link.</p>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="trust-tile">
+                        <div class="icon"><i data-lucide="shield-check"></i></div>
+                        <h3 class="h6 fw-bold font-display mb-1">Abuse protection</h3>
+                        <p class="small text-secondary mb-0">Every public form is protected against bots, and a strict anti-spam policy is enforced.</p>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="trust-tile">
+                        <div class="icon"><i data-lucide="history"></i></div>
+                        <h3 class="h6 fw-bold font-display mb-1">Real deletion</h3>
+                        <p class="small text-secondary mb-0">Deleted data is permanently removed after a short window, and every removal is logged.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <a href="{% url 'pages:security' %}" class="btn btn-outline-primary fw-semibold px-4">
+                    Read the security page <i data-lucide="arrow-right" class="ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== PRICING ===================== -->
+    <section id="pricing" class="py-5 py-md-6 section-alt-bg">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-12 col-lg-8">
+                    <span class="section-eyebrow">Pricing</span>
+                    <h2 class="section-headline mb-3">Credit-based pricing. Email is free.</h2>
+                    <p class="lead text-secondary">Pay only for what you generate. Campaigns, delivery, and tracking never cost extra.</p>
+                </div>
+            </div>
+
+            {# Single source of truth: the same partial /pricing/ renders, fed by the billing catalogue. #}
+            {% include "partials/pricing_table.html" %}
+
+            <div class="text-center mt-4">
+                <a href="{% url 'pages:pricing' %}" class="small">See full pricing details &rarr;</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== FAQ ===================== -->
+    <section id="faq" class="py-5 py-md-6">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-12 col-lg-8">
+                    <span class="section-eyebrow">FAQ</span>
+                    <h2 class="section-headline mb-3">Honest answers to the questions you'd ask</h2>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-9">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="faq-item accordion-item">
+                            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">Why send through my own SMTP account instead of a shared service?</button></h3>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body small">Shared-IP services put your deliverability at the mercy of every other sender on the same pool; one bad actor lands everyone's mail in spam. Sending through your own SMTP account, whether Gmail, Yahoo, Outlook, or a custom server, keeps your sender reputation under your control. Gmail's free SMTP allows 500 emails/day and Google Workspace lifts that to 2,000/day; other providers have similar limits.</div></div>
+                        </div>
+                        <div class="faq-item accordion-item">
+                            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">Is my SMTP password safe with you?</button></h3>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body small">Yes. Your password is protected with industry-standard encryption the moment you save it, and it is never stored or shown anywhere in readable form. You stay in control too: revoke the app password from your email provider's security settings at any time and access is cut instantly.</div></div>
+                        </div>
+                        <div class="faq-item accordion-item">
+                            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">What is a credit?</button></h3>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body small">One credit generates one personalised document, such as a certificate PDF. AI template drafts cost a couple of credits. Email delivery itself is free and unlimited within your SMTP provider's limits. Buy credits as one-time packs, or get a monthly allowance with a plan. Every new account starts with {{ pricing.free_credits }} free credits.</div></div>
+                        </div>
+                        <div class="faq-item accordion-item">
+                            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">Can I schedule or repeat campaigns?</button></h3>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body small">Yes. A campaign can run once at a scheduled time, or recur weekly or monthly. Shortly before each run the campaign locks so nothing changes mid-flight, and you receive a reminder email while there is still time to make edits.</div></div>
+                        </div>
+                        <div class="faq-item accordion-item">
+                            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">Do I need a separate email service?</button></h3>
+                            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body small">No. You connect the SMTP account you already have, and SendGlob handles templates, CSV personalization, attachments, certificates, signatures, queueing, retries, and open tracking around it.</div></div>
+                        </div>
+                        <div class="faq-item accordion-item">
+                            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6">Do you support languages other than English?</button></h3>
+                            <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body small">Emails and certificates can use any Unicode text when the selected font supports it. The dashboard UI is currently English-only.</div></div>
+                        </div>
+                        <div class="faq-item accordion-item">
+                            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7">What happens to my data if I leave?</button></h3>
+                            <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body small">Deleted data stops being available immediately and is permanently removed from our systems after a short retention period, with every removal logged. Deleted signature images are erased right away. The privacy policy spells out the full lifecycle.</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== FINAL CTA ===================== -->
+    <section class="py-5 py-md-6 section-alt-bg">
+        <div class="container">
+            <div class="cta-banner">
+                <h2 class="font-display fw-bold mb-3" style="font-size: clamp(1.75rem, 3.5vw, 2.5rem);">Ready to ditch four tools for one dashboard?</h2>
+                <p class="lead opacity-90 mb-4">Start with {{ pricing.free_credits }} free credits. No credit card, no call with sales.</p>
+                <a href="{% url 'account_signup' %}" class="btn btn-light btn-lg fw-bold px-4 d-inline-flex align-items-center gap-2" style="color:#0078D4;">
+                    Get started free <i data-lucide="arrow-right"></i>
+                </a>
+                <p class="small mt-3 mb-0 opacity-75">Email sending stays free forever. Cancel anytime.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== FOOTER (shared public footer) ===================== -->
+    {% include "partials/public_footer.html" %}
+
+</div>
+{% endblock %}

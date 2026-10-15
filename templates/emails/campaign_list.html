@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Campaigns - SendGlob{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 animated-fade-in position-relative z-3">
+    <div class="col-12 col-md-8">
+        <h1 class="h3 fw-bold font-display m-0">Bulk Campaigns</h1>
+        <p class="text-secondary mb-0">Monitor and manage email broadcasts and document campaigns</p>
+    </div>
+    <div class="col-12 col-md-4 text-md-end mt-3 mt-md-0">
+        <div class="dropdown d-inline-block">
+            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i data-lucide="plus" class="me-2"></i> Create Campaign
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                <li><a class="dropdown-item py-2 fw-medium" href="{% url 'emails:campaign_create' %}"><i data-lucide="mail" class="me-2 text-primary"></i> Standard Bulk Campaign</a></li>
+                <li><a class="dropdown-item py-2 fw-medium" href="{% url 'documents:campaign_create' %}"><i data-lucide="files" class="me-2 text-info"></i> Document Campaign</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="animated-fade-in">
+    {% if campaigns %}
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr class="text-secondary small">
+                                <th>Name</th>
+                                <th>Created</th>
+                                <th>Type</th>
+                                <th>Active SMTP</th>
+                                <th>Status</th>
+                                <th style="min-width: 160px;">Progress</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for campaign in campaigns %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">{{ campaign.name }}</div>
+                                    <div class="text-secondary small">{{ campaign.total_emails }} recipients</div>
+                                </td>
+                                <td class="small text-secondary">{{ campaign.created_at|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    {% if campaign.is_document_campaign %}
+                                        <span class="badge text-bg-info bg-opacity-10 text-info border border-info border-opacity-25">Document</span>
+                                    {% else %}
+                                        <span class="badge text-bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">Standard</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-secondary"><i data-lucide="at-sign" class="me-1"></i>{{ campaign.smtp_config.smtp_username }}</td>
+                                <td>
+                                    {% if campaign.status == 'completed' %}
+                                        <span class="badge text-bg-success">Completed</span>
+                                    {% elif campaign.status == 'sending' %}
+                                        <span class="badge text-bg-info">Sending</span>
+                                    {% elif campaign.status == 'queued' %}
+                                        <span class="badge text-bg-warning text-dark">Queued</span>
+                                    {% elif campaign.status == 'scheduled' %}
+                                        <span class="badge text-bg-info">Scheduled</span>
+                                    {% elif campaign.status == 'failed' %}
+                                        <span class="badge text-bg-danger">Failed</span>
+                                    {% elif campaign.status == 'cancelled' %}
+                                        <span class="badge text-bg-secondary">Cancelled</span>
+                                    {% else %}
+                                        <span class="badge text-bg-dark">Draft</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 6px;">
+                                            <div class="progress-bar {% if campaign.status == 'failed' %}bg-danger{% elif campaign.status == 'completed' %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ campaign.progress_percentage }}%" aria-valuenow="{{ campaign.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <span class="small fw-semibold text-secondary">{{ campaign.progress_percentage }}%</span>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'emails:campaign_detail' campaign.id %}" class="btn btn-sm btn-outline-secondary">Open</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center p-5">
+                <i data-lucide="mails" class="text-secondary opacity-50 mb-3" style="font-size:2.5rem;"></i>
+                <h2 class="h4 fw-bold font-display">No campaigns yet</h2>
+                <p class="text-secondary mx-auto" style="max-width: 460px;">Ready to send? Create a standard bulk campaign or a document campaign to start sending.</p>
+                <div class="dropdown d-inline-block mt-2">
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i data-lucide="plus" class="me-2"></i> Start First Campaign
+                    </button>
+                    <ul class="dropdown-menu shadow border-0">
+                        <li><a class="dropdown-item py-2 fw-medium" href="{% url 'emails:campaign_create' %}"><i data-lucide="mail" class="me-2 text-primary"></i> Standard Bulk Campaign</a></li>
+                        <li><a class="dropdown-item py-2 fw-medium" href="{% url 'documents:campaign_create' %}"><i data-lucide="files" class="me-2 text-info"></i> Document Campaign</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

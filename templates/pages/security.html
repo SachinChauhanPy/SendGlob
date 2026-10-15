@@ -1,0 +1,116 @@
+{% extends "base_public.html" %}
+{% block title %}Security &amp; Trust - SendGlob{% endblock %}
+{% block meta_description %}How SendGlob protects your data: encryption at rest, sending from your own email account, private file delivery, and permanent data removal. Every claim is implemented, none is roadmap.{% endblock %}
+{% block public_content %}
+<div class="container py-5" style="max-width: 900px;">
+    <div class="text-center mb-5">
+        <span class="section-eyebrow">Security &amp; Trust</span>
+        <h1 class="section-headline mb-3">What SendGlob actually does to protect your data</h1>
+        <p class="text-secondary mx-auto" style="max-width: 620px;">
+            Every item on this page describes a control implemented in the product
+            today. Nothing here is a roadmap claim. If a control is not listed, we
+            have not built it yet, and we will not pretend otherwise.
+        </p>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6">
+            <div class="trust-tile">
+                <div class="icon"><i data-lucide="mail"></i></div>
+                <h2 class="h6 fw-bold font-display mb-2">Your mail stays yours</h2>
+                <p class="small text-secondary mb-0">
+                    Email is sent from your own SMTP account using an app password you
+                    create and can revoke at any time. SendGlob is not a mail relay,
+                    does not use shared IP pools, and does not read your mailbox. Your
+                    sender reputation stays under your control.
+                </p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="trust-tile">
+                <div class="icon"><i data-lucide="key-round"></i></div>
+                <h2 class="h6 fw-bold font-display mb-2">Encryption at rest</h2>
+                <p class="small text-secondary mb-0">
+                    Your email app password and uploaded signature images are protected
+                    with industry-standard encryption before they are stored. Encryption
+                    keys are kept separate from the data they protect, and nothing
+                    sensitive is ever stored in readable form.
+                </p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="trust-tile">
+                <div class="icon"><i data-lucide="fingerprint"></i></div>
+                <h2 class="h6 fw-bold font-display mb-2">Private files, private links</h2>
+                <p class="small text-secondary mb-0">
+                    Signatures and generated documents are never exposed at public links.
+                    Every file is delivered through your signed-in session and checked
+                    against your account on each request, so only you can open what you
+                    create.
+                </p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="trust-tile">
+                <div class="icon"><i data-lucide="history"></i></div>
+                <h2 class="h6 fw-bold font-display mb-2">Deletion that actually deletes</h2>
+                <p class="small text-secondary mb-0">
+                    When you delete something it stops being available immediately, and
+                    after a short recovery window it is permanently removed from our
+                    systems, with every removal logged. Deleted signature images are
+                    erased from storage right away.
+                </p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="trust-tile">
+                <div class="icon"><i data-lucide="shield-check"></i></div>
+                <h2 class="h6 fw-bold font-display mb-2">Abuse protection</h2>
+                <p class="small text-secondary mb-0">
+                    Sign-up, sign-in, password reset, and the contact form are protected
+                    against bots and automated abuse. Bulk sending is governed by our
+                    <a href="{% url 'pages:acceptable_use' %}">Acceptable Use and
+                    Anti-Spam Policy</a>, and accounts that violate it are suspended.
+                </p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="trust-tile">
+                <div class="icon"><i data-lucide="users"></i></div>
+                <h2 class="h6 fw-bold font-display mb-2">Your recipients' data</h2>
+                <p class="small text-secondary mb-0">
+                    The recipient CSV data you upload stays under your control: SendGlob
+                    processes it only to send campaigns and generate documents on your
+                    behalf, with the same retention and security controls. You are
+                    responsible for having consent to contact your recipients; the
+                    <a href="{% url 'pages:privacy' %}">Privacy Policy</a> describes the
+                    controller/processor split.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="border rounded-4 p-4 bg-body">
+        <h2 class="h6 fw-bold font-display mb-2"><i data-lucide="globe" class="me-2 text-primary"></i>Sub-processors</h2>
+        <p class="small text-secondary mb-2">
+            SendGlob relies on a short list of infrastructure providers, listed here
+            for transparency:
+        </p>
+        <ul class="small text-secondary mb-0">
+            <li><span class="text-body fw-semibold">Razorpay</span>: payment processing (card and billing details never touch SendGlob servers)</li>
+            <li><span class="text-body fw-semibold">Google</span>: optional sign-in with Google (OAuth)</li>
+            <li><span class="text-body fw-semibold">AWS</span>: application hosting</li>
+            <li><span class="text-body fw-semibold">Cloudflare</span>: bot protection on sign-in and contact forms</li>
+        </ul>
+    </div>
+
+    <div class="border rounded-4 p-3 bg-body-tertiary mt-4">
+        <p class="small text-secondary mb-0">
+            <i data-lucide="shield" class="me-1"></i>
+            Found a security issue? Please report it responsibly via the
+            <a href="{% url 'pages:contact' %}">contact form</a> or
+            <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>. We read every report.
+        </p>
+    </div>
+</div>
+{% endblock %}

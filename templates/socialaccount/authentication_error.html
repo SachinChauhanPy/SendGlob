@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}Authentication Error - SendGlob{% endblock %}
+
+{% block main_classes %}p-0 m-0{% endblock %}
+{% block messages %}{% endblock %}
+
+{% block content %}
+<div class="auth-split">
+    <!-- Left: dark form panel -->
+    <div class="auth-form-panel" data-bs-theme="dark">
+        <div class="auth-form-content animated-fade-in">
+
+            {% include "partials/messages.html" %}
+
+            <div class="mb-4">
+                <span class="d-block small text-secondary mb-1">Sign-in failed for</span>
+                <span class="d-inline-flex align-items-center gap-2 font-display fw-bold text-primary" style="font-size: 2rem; line-height: 1.1;">
+                    <img src="{% static 'img/dashboard-icon.png' %}" alt="" width="40" height="40" class="brand-logo">
+                    SendGlob
+                </span>
+            </div>
+
+            <hr class="opacity-25 mb-4">
+
+            <div class="d-flex align-items-start gap-3 mb-4">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-25 text-danger flex-shrink-0" style="width: 48px; height: 48px;">
+                    <i data-lucide="circle-alert" class="fs-4"></i>
+                </span>
+                <div>
+                    <h2 class="h5 fw-bold font-display mb-1">Social authentication error</h2>
+                    <p class="text-secondary small mb-0">
+                        An error occurred while signing in with your Google account. Common causes: consent denied, an invalid state session, or the request was cancelled.
+                    </p>
+                </div>
+            </div>
+
+            <a href="{% url 'account_login' %}" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold">
+                Back to sign in <i data-lucide="arrow-right"></i>
+            </a>
+
+            <p class="text-center small text-secondary mt-4 mb-0">
+                Need an account?
+                <a href="{% url 'account_signup' %}" class="text-decoration-none fw-semibold">Sign up</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Right: blue marble decoration -->
+    <div class="auth-decoration-panel" aria-hidden="true"></div>
+</div>
+{% endblock %}

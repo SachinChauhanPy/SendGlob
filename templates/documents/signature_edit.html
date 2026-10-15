@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ signature.name }} - {{ APP_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .editor-toolbar .btn { white-space: nowrap; }
+    .tool-btn.active { color: #fff; background-color: var(--bs-primary); border-color: var(--bs-primary); }
+    .editor-stage {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        line-height: 0;
+        border-radius: .5rem;
+        overflow: hidden;
+        background-image:
+            linear-gradient(45deg, var(--bs-secondary-bg) 25%, transparent 25%, transparent 75%, var(--bs-secondary-bg) 75%),
+            linear-gradient(45deg, var(--bs-secondary-bg) 25%, transparent 25%, transparent 75%, var(--bs-secondary-bg) 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 10px 10px;
+    }
+    .editor-frame { position: relative; transform-origin: center center; }
+    .editor-stage canvas { display: block; max-width: 100%; height: auto; }
+    #ui { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+    .hint-bar { background: var(--bs-tertiary-bg); border-radius: .5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animated-fade-in" style="max-width: 1000px;">
+    <a href="{% url 'documents:signature_detail' signature.id %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to {{ signature.name }}
+    </a>
+    <h1 class="h3 fw-bold font-display m-0">Touch up signature</h1>
+    <p class="text-secondary mb-3">Straighten, crop tight, then erase any leftover marks. Whatever you erase becomes transparent.</p>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-3 p-md-4">
+
+            <!-- Toolbar -->
+            <div class="editor-toolbar d-flex flex-wrap align-items-center gap-3 mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-secondary fw-semibold">Tool</span>
+                    <div class="btn-group" role="group">
+                        <button type="button" id="tool-erase" class="btn btn-outline-primary tool-btn active"><i data-lucide="eraser" class="me-1"></i>Erase</button>
+                        <button type="button" id="tool-crop" class="btn btn-outline-primary tool-btn"><i data-lucide="crop" class="me-1"></i>Crop</button>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2" id="brush-wrap">
+                    <span class="small text-secondary fw-semibold">Brush</span>
+                    <input type="range" id="brush" min="8" max="90" value="30" class="form-range" style="width: 130px;">
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-secondary fw-semibold">Rotate</span>
+                    <button type="button" id="rot-left" class="btn btn-outline-secondary btn-sm" title="Rotate 90° left"><i data-lucide="rotate-ccw"></i></button>
+                    <button type="button" id="rot-right" class="btn btn-outline-secondary btn-sm" title="Rotate 90° right"><i data-lucide="rotate-cw"></i></button>
+                    <input type="range" id="fine" min="-20" max="20" value="0" step="1" class="form-range" style="width: 130px;" title="Fine angle">
+                    <span id="fine-val" class="small text-body" style="width: 2.6rem;">0°</span>
+                </div>
+
+                <button type="button" id="apply-crop" class="btn btn-success btn-sm d-none"><i data-lucide="check" class="me-1"></i>Apply crop</button>
+                <button type="button" id="undo" class="btn btn-outline-secondary btn-sm ms-auto" disabled title="Undo (Ctrl+Z)"><i data-lucide="corner-up-left" class="me-1"></i>Undo</button>
+                <button type="button" id="reset" class="btn btn-outline-secondary btn-sm" title="Revert all changes"><i data-lucide="undo-2" class="me-1"></i>Reset</button>
+            </div>
+
+            <!-- Hint -->
+            <div class="hint-bar small text-secondary px-3 py-2 mb-3" id="hint">
+                <i data-lucide="info" class="me-1"></i><span id="hint-text">Erase: drag over the marks you want to remove. The ring shows your brush size.</span>
+            </div>
+
+            <!-- Canvas -->
+            <div class="text-center">
+                <div class="editor-stage" id="stage">
+                    <div class="editor-frame" id="frame">
+                        <canvas id="img"></canvas>
+                        <canvas id="ui"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="save-form" action="{% url 'documents:signature_save_edit' signature.id %}" method="post" class="text-end mt-4">
+        {% csrf_token %}
+        <input type="hidden" name="image_data" id="image_data">
+        <a href="{% url 'documents:signature_detail' signature.id %}" class="btn btn-outline-secondary me-2">Cancel</a>
+        <button type="submit" id="save-btn" class="btn btn-primary px-4"><i data-lucide="save" class="me-1"></i>Save signature</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const SRC = "{% url 'documents:signature_image' signature.id 'processed' %}";
+    const imgC = document.getElementById('img');
+    const uiC = document.getElementById('ui');
+    const ictx = imgC.getContext('2d');
+    const uctx = uiC.getContext('2d');
+    const frame = document.getElementById('frame');
+    const brush = document.getElementById('brush');
+    const hintText = document.getElementById('hint-text');
+    const applyCropBtn = document.getElementById('apply-crop');
+
+    let mode = 'erase';
+    let drawing = false;
+    let last = null;
+    let cursor = null;          // {x,y} backing coords for the brush ring
+    let sel = null;             // crop selection {x,y,w,h} in backing coords
+    let selStart = null;
+
+    // ---- undo history (snapshot the image before each mutating action) ----
+    const history = [];
+    const HISTORY_MAX = 25;
+    const undoBtn = document.getElementById('undo');
+    function updateUndo() { undoBtn.disabled = history.length === 0; }
+    function snapshot() {
+        try { history.push(imgC.toDataURL('image/png')); } catch (e) { return; }
+        if (history.length > HISTORY_MAX) history.shift();
+        updateUndo();
+    }
+    function undo() {
+        if (!history.length) return;
+        const url = history.pop();
+        const im = new Image();
+        im.onload = () => setImage(im);   // setImage does not snapshot
+        im.src = url;
+        updateUndo();
+    }
+
+    // ---- canvas plumbing ----
+    function setImage(src) {
+        imgC.width = src.width;  imgC.height = src.height;
+        ictx.clearRect(0, 0, imgC.width, imgC.height);
+        ictx.drawImage(src, 0, 0);
+        uiC.width = src.width;   uiC.height = src.height;
+        sel = null;
+        applyCropBtn.classList.add('d-none');
+        renderUI();
+    }
+
+    function loadSrc() {
+        const im = new Image();
+        im.onload = () => setImage(im);     // same-origin /media — canvas stays clean
+        im.src = SRC + (SRC.indexOf('?') < 0 ? '?v=' : '&v=') + Date.now();
+    }
+
+    function scale() {
+        const r = uiC.getBoundingClientRect();
+        return imgC.width / (r.width || imgC.width);
+    }
+    function toBacking(e) {
+        const r = uiC.getBoundingClientRect();
+        const s = imgC.width / (r.width || imgC.width);
+        return { x: (e.clientX - r.left) * s, y: (e.clientY - r.top) * s };
+    }
+    function brushBacking() { return parseInt(brush.value, 10) * scale(); }   // diameter
+
+    // ---- UI overlay (brush ring + crop box) drawn every interaction ----
+    function renderUI() {
+        uctx.clearRect(0, 0, uiC.width, uiC.height);
+
+        if (mode === 'crop' && sel) {
+            uctx.save();
+            uctx.fillStyle = 'rgba(0,0,0,0.45)';
+            uctx.fillRect(0, 0, uiC.width, uiC.height);
+            uctx.clearRect(sel.x, sel.y, sel.w, sel.h);
+            uctx.strokeStyle = '#0d6efd';
+            uctx.lineWidth = Math.max(2, uiC.width / 350);
+            uctx.setLineDash([10, 6]);
+            uctx.strokeRect(sel.x, sel.y, sel.w, sel.h);
+            uctx.setLineDash([]);
+            // corner handles
+            const hs = Math.max(6, uiC.width / 110);
+            uctx.fillStyle = '#0d6efd';
+            [[sel.x, sel.y], [sel.x + sel.w, sel.y], [sel.x, sel.y + sel.h], [sel.x + sel.w, sel.y + sel.h]]
+                .forEach(([hx, hy]) => uctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs));
+            uctx.restore();
+        }
+
+        if (mode === 'erase' && cursor) {
+            const rad = brushBacking() / 2;
+            uctx.save();
+            uctx.beginPath();
+            uctx.arc(cursor.x, cursor.y, rad, 0, Math.PI * 2);
+            uctx.fillStyle = 'rgba(220,53,69,0.18)';
+            uctx.fill();
+            uctx.lineWidth = Math.max(1.5, uiC.width / 500);
+            uctx.strokeStyle = '#dc3545';
+            uctx.stroke();
+            uctx.restore();
+        }
+    }
+
+    // ---- erase ----
+    function eraseTo(p) {
+        const d = brushBacking();
+        ictx.globalCompositeOperation = 'destination-out';
+        ictx.lineCap = 'round';
+        ictx.lineJoin = 'round';
+        ictx.lineWidth = d;
+        ictx.strokeStyle = 'rgba(0,0,0,1)';
+        ictx.beginPath();
+        const a = last || p;
+        ictx.moveTo(a.x, a.y);
+        ictx.lineTo(p.x, p.y);
+        ictx.stroke();
+        // also stamp a dot so single taps erase
+        ictx.beginPath();
+        ictx.arc(p.x, p.y, d / 2, 0, Math.PI * 2);
+        ictx.fill();
+        ictx.globalCompositeOperation = 'source-over';
+        last = p;
+    }
+
+    // ---- pointer events ----
+    uiC.addEventListener('pointerdown', (e) => {
+        uiC.setPointerCapture(e.pointerId);
+        const p = toBacking(e);
+        drawing = true;
+        if (mode === 'erase') { snapshot(); last = null; eraseTo(p); }
+        else { selStart = p; sel = { x: p.x, y: p.y, w: 0, h: 0 }; }
+        renderUI();
+    });
+
+    uiC.addEventListener('pointermove', (e) => {
+        const p = toBacking(e);
+        cursor = p;
+        if (drawing) {
+            if (mode === 'erase') eraseTo(p);
+            else sel = {
+                x: Math.min(selStart.x, p.x), y: Math.min(selStart.y, p.y),
+                w: Math.abs(p.x - selStart.x), h: Math.abs(p.y - selStart.y),
+            };
+        }
+        renderUI();
+    });
+
+    function endStroke() {
+        drawing = false; last = null;
+        if (mode === 'crop' && sel && sel.w > 6 && sel.h > 6) applyCropBtn.classList.remove('d-none');
+        renderUI();
+    }
+    uiC.addEventListener('pointerup', endStroke);
+    uiC.addEventListener('pointercancel', endStroke);
+    uiC.addEventListener('pointerleave', () => { cursor = null; renderUI(); });
+
+    // ---- crop apply ----
+    applyCropBtn.addEventListener('click', () => {
+        if (!sel || sel.w < 6 || sel.h < 6) return;
+        snapshot();
+        const x = Math.max(0, Math.round(sel.x)), y = Math.max(0, Math.round(sel.y));
+        const w = Math.min(imgC.width - x, Math.round(sel.w)), h = Math.min(imgC.height - y, Math.round(sel.h));
+        const tmp = document.createElement('canvas');
+        tmp.width = w; tmp.height = h;
+        tmp.getContext('2d').drawImage(imgC, x, y, w, h, 0, 0, w, h);
+        setImage(tmp);
+    });
+
+    // ---- rotation ----
+    function bakeRotate(rad) {
+        const w = imgC.width, h = imgC.height;
+        const nw = Math.ceil(Math.abs(w * Math.cos(rad)) + Math.abs(h * Math.sin(rad)));
+        const nh = Math.ceil(Math.abs(w * Math.sin(rad)) + Math.abs(h * Math.cos(rad)));
+        const tmp = document.createElement('canvas');
+        tmp.width = nw; tmp.height = nh;
+        const t = tmp.getContext('2d');
+        t.translate(nw / 2, nh / 2);
+        t.rotate(rad);
+        t.drawImage(imgC, -w / 2, -h / 2);
+        setImage(tmp);
+    }
+    document.getElementById('rot-left').addEventListener('click', () => { snapshot(); bakeRotate(-Math.PI / 2); });
+    document.getElementById('rot-right').addEventListener('click', () => { snapshot(); bakeRotate(Math.PI / 2); });
+
+    const fine = document.getElementById('fine');
+    const fineVal = document.getElementById('fine-val');
+    fine.addEventListener('input', () => {          // live preview via CSS
+        fineVal.textContent = fine.value + '°';
+        frame.style.transform = 'rotate(' + fine.value + 'deg)';
+    });
+    fine.addEventListener('change', () => {          // bake on release
+        const deg = parseFloat(fine.value);
+        frame.style.transform = '';
+        fine.value = 0; fineVal.textContent = '0°';
+        if (deg) { snapshot(); bakeRotate(deg * Math.PI / 180); }
+    });
+
+    // ---- mode toggle ----
+    function setMode(m) {
+        mode = m;
+        sel = null; applyCropBtn.classList.add('d-none');
+        document.getElementById('tool-erase').classList.toggle('active', m === 'erase');
+        document.getElementById('tool-crop').classList.toggle('active', m === 'crop');
+        document.getElementById('brush-wrap').style.opacity = m === 'erase' ? '1' : '.4';
+        hintText.textContent = m === 'erase'
+            ? 'Erase: drag over the marks you want to remove. The red ring shows your brush size.'
+            : 'Crop: drag a box around the signature, then click Apply crop.';
+        renderUI();
+    }
+    document.getElementById('tool-erase').addEventListener('click', () => setMode('erase'));
+    document.getElementById('tool-crop').addEventListener('click', () => setMode('crop'));
+    brush.addEventListener('input', renderUI);
+
+    // ---- undo / reset ----
+    undoBtn.addEventListener('click', undo);
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+    });
+    document.getElementById('reset').addEventListener('click', () => {
+        history.length = 0; updateUndo(); loadSrc();
+    });
+
+    // ---- save ----
+    document.getElementById('save-form').addEventListener('submit', () => {
+        document.getElementById('image_data').value = imgC.toDataURL('image/png');
+    });
+
+    loadSrc();
+});
+</script>
+{% endblock %}

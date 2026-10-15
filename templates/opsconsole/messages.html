@@ -1,0 +1,61 @@
+{% extends "opsconsole/base_ops.html" %}
+{% block title %}Messages - Ops Console{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h1 class="h4 fw-bold m-0">Contact messages</h1>
+    <div class="btn-group btn-group-sm">
+        <a href="{% url 'opsconsole:messages' %}" class="btn btn-outline-secondary {% if not status %}active{% endif %}">All</a>
+        {% for value, label in status_choices %}
+        <a href="{% url 'opsconsole:messages' %}?status={{ value }}" class="btn btn-outline-secondary {% if status == value %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="d-flex flex-column gap-3">
+    {% for m in items %}
+    <div class="card bg-body border-secondary">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                <div>
+                    <span class="fw-bold text-body">{{ m.name }}</span>
+                    <a href="mailto:{{ m.email }}{% if m.subject %}?subject=Re: {{ m.subject|urlencode }}{% endif %}" class="ms-1">{{ m.email }}</a>
+                    {% if m.user %}<span class="badge text-bg-secondary ms-1">account</span>{% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    {% if m.status == 'new' %}<span class="badge text-bg-primary">new</span>
+                    {% elif m.status == 'read' %}<span class="badge text-bg-warning">read</span>
+                    {% else %}<span class="badge text-bg-success">resolved</span>{% endif %}
+                    <span class="text-secondary small">{{ m.created_at|date:"M j, Y H:i" }}</span>
+                </div>
+            </div>
+            {% if m.subject %}<div class="fw-semibold text-body small mb-1">{{ m.subject }}</div>{% endif %}
+            <p class="text-body small mb-2" style="white-space: pre-wrap;">{{ m.message }}</p>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span class="text-secondary small">
+                    {% if m.ip_address %}IP {{ m.ip_address }}{% endif %}
+                    {% if m.handled_by %} &middot; handled by {{ m.handled_by.email }}{% endif %}
+                </span>
+                <div class="d-flex gap-2">
+                    {% if m.status != 'read' %}
+                    <form method="post" action="{% url 'opsconsole:message_set_status' m.pk %}">
+                        {% csrf_token %}<input type="hidden" name="status" value="read">
+                        <button class="btn btn-sm btn-outline-secondary" type="submit">Mark read</button>
+                    </form>
+                    {% endif %}
+                    {% if m.status != 'resolved' %}
+                    <form method="post" action="{% url 'opsconsole:message_set_status' m.pk %}">
+                        {% csrf_token %}<input type="hidden" name="status" value="resolved">
+                        <button class="btn btn-sm btn-outline-success" type="submit">Mark resolved</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card bg-body border-secondary"><div class="card-body text-center text-secondary py-5">
+        No messages{% if status %} with status "{{ status }}"{% endif %}.
+    </div></div>
+    {% endfor %}
+</div>
+{% endblock %}

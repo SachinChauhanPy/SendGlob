@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Documents - {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 animated-fade-in">
+    <div class="col-12 col-md-7">
+        <h1 class="h3 fw-bold font-display m-0">Document Templates</h1>
+        <p class="text-secondary mb-0">Place any number of text fields on a background and auto-render personalized documents from a CSV</p>
+    </div>
+    <div class="col-12 col-md-5 text-md-end mt-3 mt-md-0">
+        <div class="d-flex justify-content-md-end gap-2">
+            <a href="{% url 'documents:create' %}" class="btn btn-outline-primary">
+                <i data-lucide="plus" class="me-2"></i> Add Template
+            </a>
+            <a href="{% url 'documents:campaign_create' %}" class="btn btn-success">
+                <i data-lucide="files" class="me-2"></i> Run Document Campaign
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="animated-fade-in">
+    {% if templates %}
+        <div class="row g-4">
+            {% for template in templates %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+                    <div class="position-relative bg-body-tertiary border-bottom" style="height: 180px;">
+                        <img src="{% url 'documents:preview' template.id %}" class="w-100 h-100 object-fit-cover" alt="{{ template.name }} preview">
+                        <span class="position-absolute bottom-0 end-0 m-2 badge text-bg-dark bg-opacity-75">Live Preview</span>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="h5 fw-bold font-display text-truncate m-0">{{ template.name }}</h2>
+                        <hr class="my-3 opacity-25">
+                        <div class="row text-secondary small g-2">
+                            <div class="col-6"><i data-lucide="type" class="me-2 text-primary"></i>Fields: <strong>{{ template.text_fields.count }}</strong></div>
+                            <div class="col-6"><i data-lucide="file-output" class="me-2 text-primary"></i>Output: <strong>{{ template.get_output_format_display }}</strong></div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top d-flex justify-content-between align-items-center">
+                        <span class="small text-secondary">Created {{ template.created_at|date:"M d, Y" }}</span>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'documents:edit' template.id %}" class="btn btn-sm btn-outline-primary" title="Edit template & fields">
+                                <i data-lucide="square-pen"></i>
+                            </a>
+                            <form action="{% url 'documents:delete' template.id %}" method="post" onsubmit="return confirm('Delete this document template?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete template">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center p-5">
+                <i data-lucide="files" class="text-secondary opacity-50 mb-3" style="font-size:2.5rem;"></i>
+                <h2 class="h4 fw-bold font-display">No document templates</h2>
+                <p class="text-secondary mx-auto" style="max-width: 460px;">Upload a background image (JPG/PNG), add one or more text fields with coordinates, and generate personalized certificates, offer letters, ID cards, and more.</p>
+                <a href="{% url 'documents:create' %}" class="btn btn-primary mt-2">
+                    <i data-lucide="plus" class="me-2"></i> Add Document Template
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

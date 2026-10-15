@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+{% load tz %}
+
+{% block title %}{{ campaign.name }} - Campaign Detail{% endblock %}
+
+{% block extra_css %}
+<style>
+    .campaign-detail-header {
+        position: relative;
+        z-index: 20;
+    }
+    .campaign-actions-dropdown .dropdown-menu {
+        z-index: 1080;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="campaign-detail-header d-flex flex-column flex-xl-row align-items-start justify-content-between gap-3 mb-4 animated-fade-in">
+    <div class="flex-grow-1" style="min-width: 0;">
+        <a href="{% url 'emails:campaign_list' %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-1">
+            <i data-lucide="arrow-left" class="me-1"></i> Back to Campaigns
+        </a>
+        <h1 class="h3 fw-bold font-display m-0">{{ campaign.name }}</h1>
+        <p class="text-secondary mb-0 mt-1">
+            {% if campaign.is_document_campaign %}
+                <span class="badge text-bg-info bg-opacity-10 text-info border border-info border-opacity-25 me-2"><i data-lucide="files" class="me-1"></i>Document Campaign</span>
+            {% else %}
+                <span class="badge text-bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 me-2"><i data-lucide="mail" class="me-1"></i>Standard Campaign</span>
+            {% endif %}
+            <span class="small">Created {{ campaign.created_at|date:"M d, Y H:i" }} · SMTP: {{ campaign.smtp_config.smtp_username }}</span>
+            {% if campaign.is_document_campaign and campaign.document_template %}
+            <br><span class="small text-secondary"><i data-lucide="file-image" class="me-1"></i>Template: <strong>{{ campaign.document_template.name }}</strong> · Output: {{ campaign.document_template.get_output_format_display }}</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="dropdown flex-shrink-0 campaign-actions-dropdown">
+        <button class="btn btn-primary dropdown-toggle px-4" type="button" id="campaignActionsDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+            Actions
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 p-2" aria-labelledby="campaignActionsDropdown" style="min-width: 240px;">
+            {% if campaign.status == 'draft' %}
+            <li>
+                {% if campaign.recipients.count > 0 %}
+                <form action="{% url 'emails:campaign_queue' campaign.id %}" method="post" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-2">
+                        <i data-lucide="circle-play" class="text-primary"></i>Start Sending
+                    </button>
+                </form>
+                {% else %}
+                <button type="button" class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-muted" disabled title="Add recipients before starting.">
+                    <i data-lucide="circle-play" class="text-secondary opacity-50"></i>Start Sending (No Recipients)
+                </button>
+                {% endif %}
+            </li>
+            {% elif campaign.status == 'failed' or campaign.status == 'cancelled' %}
+            <li>
+                {% if campaign.recipients.count > campaign.sent_emails %}
+                <form action="{% url 'emails:campaign_queue' campaign.id %}" method="post" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-2">
+                        <i data-lucide="circle-play" class="text-primary"></i>Resume Sending
+                    </button>
+                </form>
+                {% else %}
+                <button type="button" class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-muted" disabled title="All emails have been sent.">
+                    <i data-lucide="circle-play" class="text-secondary opacity-50"></i>Resume Sending
+                </button>
+                {% endif %}
+            </li>
+            <li>
+                {% if campaign.recipients.count > 0 %}
+                <form action="{% url 'emails:campaign_restart' campaign.id %}" method="post" class="m-0" onsubmit="return confirm('Are you sure you want to restart this campaign from scratch? This will reset all previous send/open statistics and resend to all recipients.');">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-2">
+                        <i data-lucide="rotate-ccw" class="text-warning"></i>Restart Campaign
+                    </button>
+                </form>
+                {% else %}
+                <button type="button" class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-muted" disabled>
+                    <i data-lucide="rotate-ccw" class="text-secondary opacity-50"></i>Restart Campaign
+                </button>
+                {% endif %}
+            </li>
+            {% elif campaign.status == 'completed' %}
+            <li>
+                {% if campaign.recipients.count > 0 %}
+                <form action="{% url 'emails:campaign_restart' campaign.id %}" method="post" class="m-0" onsubmit="return confirm('Are you sure you want to restart this campaign from scratch? This will reset all previous send/open statistics and resend to all recipients.');">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-2">
+                        <i data-lucide="rotate-ccw" class="text-warning"></i>Restart Campaign
+                    </button>
+                </form>
+                {% else %}
+                <button type="button" class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-muted" disabled>
+                    <i data-lucide="rotate-ccw" class="text-secondary opacity-50"></i>Restart Campaign
+                </button>
+                {% endif %}
+            </li>
+            {% elif campaign.status == 'queued' or campaign.status == 'sending' %}
+            <li>
+                <form action="{% url 'emails:campaign_cancel' campaign.id %}" method="post" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-2">
+                        <i data-lucide="circle-stop" class="text-danger"></i>Cancel / Pause
+                    </button>
+                </form>
+            </li>
+            {% elif campaign.status == 'scheduled' %}
+            <li>
+                {% if campaign.recipients.count > 0 %}
+                <form action="{% url 'emails:campaign_queue' campaign.id %}" method="post" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-2">
+                        <i data-lucide="circle-play" class="text-primary"></i>Send Now
+                    </button>
+                </form>
+                {% endif %}
+            </li>
+            <li>
+                <form action="{% url 'emails:campaign_unschedule' campaign.id %}" method="post" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-2">
+                        <i data-lucide="calendar-x" class="text-warning"></i>Unschedule
+                    </button>
+                </form>
+            </li>
+            {% endif %}
+
+            {% if campaign.status != 'queued' and campaign.status != 'sending' and campaign.status != 'scheduled' %}
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <a href="{% url 'emails:campaign_edit' campaign.id %}" class="dropdown-item rounded-2 d-flex align-items-center gap-2">
+                    <i data-lucide="square-pen" class="text-primary"></i>Edit Campaign
+                </a>
+            </li>
+            <li>
+                <form action="{% url 'emails:campaign_delete' campaign.id %}" method="post" class="m-0" onsubmit="return confirm('Are you sure you want to permanently delete this campaign and all its recipient logs?');">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-2 text-danger">
+                        <i data-lucide="trash-2"></i>Delete Campaign
+                    </button>
+                </form>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+
+{% if campaign.status == 'scheduled' %}
+<div class="alert alert-info border-0 shadow-sm rounded-4 d-flex align-items-start gap-3 animated-fade-in" role="alert">
+    <i data-lucide="calendar-clock" class="mt-1"></i>
+    <div class="flex-grow-1">
+        <div class="fw-semibold">Next run {{ campaign.next_run_at|timezone:campaign.schedule_timezone|date:"M d, Y H:i" }} {{ campaign.schedule_timezone }}</div>
+        <div class="small mb-0">Schedule: {{ campaign.schedule_summary }}. The campaign is locked until it sends &mdash; use the Actions menu to <strong>Send Now</strong> or <strong>Unschedule</strong>.{% if campaign.parent_campaign %} Part of a recurring series (<a href="{% url 'emails:campaign_detail' campaign.parent_campaign.id %}" class="alert-link">view original</a>).{% endif %}</div>
+    </div>
+</div>
+{% endif %}
+
+{% if campaign.is_document_campaign and docs_pending_count > 0 and campaign.status in 'queued,sending,draft' %}
+<div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-start gap-3 mb-4 animated-fade-in" role="alert">
+    <i data-lucide="loader" class="mt-1 spin"></i>
+    <div>
+        <div class="fw-semibold">Documents generating&hellip;</div>
+        <div class="small mb-0">{{ docs_pending_count }} of {{ campaign.total_emails }} document{{ docs_pending_count|pluralize }} still being generated. Emails will attach and send once ready.</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4 animated-fade-in">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body">
+                <span class="text-secondary small fw-medium">Status</span>
+                <h2 class="h5 fw-bold font-display mt-2 mb-0" id="campaign-status-text">
+                    {% if campaign.status == 'completed' %}<span class="text-success"><i data-lucide="check-check" class="me-1"></i>Completed</span>
+                    {% elif campaign.status == 'sending' %}<span class="text-info"><i data-lucide="refresh-cw" class="spin me-1"></i>Sending</span>
+                    {% elif campaign.status == 'queued' %}<span class="text-warning"><i data-lucide="hourglass" class="me-1"></i>Queued</span>
+                    {% elif campaign.status == 'scheduled' %}<span class="text-info"><i data-lucide="calendar-clock" class="me-1"></i>Scheduled</span>
+                    {% elif campaign.status == 'failed' %}<span class="text-danger"><i data-lucide="triangle-alert" class="me-1"></i>Failed</span>
+                    {% elif campaign.status == 'cancelled' %}<span class="text-secondary"><i data-lucide="ban" class="me-1"></i>Cancelled</span>
+                    {% else %}<span class="text-body"><i data-lucide="file-text" class="me-1"></i>Draft</span>{% endif %}
+                </h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body">
+                <span class="text-secondary small fw-medium">Sent Successfully</span>
+                <h2 class="h5 fw-bold font-display text-success mt-2 mb-0" id="campaign-sent-count">{{ sent_count }} / {{ campaign.total_emails }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body">
+                <span class="text-secondary small fw-medium">Failed / Bounced</span>
+                <h2 class="h5 fw-bold font-display text-danger mt-2 mb-0" id="campaign-failed-count">{{ failed_count }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body">
+                <span class="text-secondary small fw-medium">Read / Opened</span>
+                <h2 class="h5 fw-bold font-display text-warning mt-2 mb-0" id="campaign-opened-count">{{ opened_count }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 animated-fade-in">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="fw-bold font-display small">Overall Campaign Progress</span>
+            <span class="fw-bold font-display text-primary" id="progress-percentage-text">{{ campaign.progress_percentage }}%</span>
+        </div>
+        <div class="progress" style="height: 12px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated {% if campaign.status == 'completed' %}bg-success{% elif campaign.status == 'failed' %}bg-danger{% else %}bg-primary{% endif %}" id="progress-bar-el" role="progressbar" style="width: {{ campaign.progress_percentage }}%" aria-valuenow="{{ campaign.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Recipients -->
+<div class="card border-0 shadow-sm rounded-4 animated-fade-in">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 fw-bold font-display m-0">Recipients Log</h2>
+            <span class="text-secondary small">Matches CSV and quick entry list</span>
+        </div>
+        {% if recipients %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr class="text-secondary small">
+                        <th>Name &amp; Email</th>
+                        <th>Status</th>
+                        <th>Opened</th>
+                        <th>Retries</th>
+                        <th>Sent Date</th>
+                        {% if campaign.is_document_campaign %}<th class="text-end">Document</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody id="recipients-table-body">
+                    {% for recipient in recipients %}
+                    <tr data-recipient-id="{{ recipient.id }}">
+                        <td>
+                            <div class="fw-semibold">{{ recipient.name }}</div>
+                            <div class="text-secondary small">{{ recipient.email }}</div>
+                        </td>
+                        <td class="recipient-status-cell">
+                            {% if recipient.status == 'sent' %}
+                                <span class="badge text-bg-success bg-opacity-10 text-success border border-success border-opacity-25">Sent</span>
+                            {% elif recipient.status == 'failed' %}
+                                <span class="badge text-bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25" title="{{ recipient.error_message }}">Failed</span>
+                                <div class="text-danger small mt-1 text-truncate" style="max-width: 250px;">{{ recipient.error_message }}</div>
+                            {% elif recipient.status == 'sending' %}
+                                <span class="badge text-bg-info bg-opacity-10 text-info border border-info border-opacity-25">Sending</span>
+                            {% elif recipient.status == 'retrying' %}
+                                <span class="badge text-bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">Retrying</span>
+                            {% else %}
+                                <span class="badge text-bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="recipient-opened-cell">
+                            {% if recipient.opened_at %}
+                                <span class="text-success small"><i data-lucide="eye" class="me-1"></i>{{ recipient.opened_at|date:"H:i" }}</span>
+                            {% elif recipient.status == 'sent' %}
+                                <span class="text-secondary small"><i data-lucide="eye-off" class="me-1"></i>Unread</span>
+                            {% else %}
+                                <span class="text-secondary small">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="recipient-retries-cell small text-secondary fw-semibold">{{ recipient.retry_count }}</td>
+                        <td class="recipient-sent-cell small text-secondary">{% if recipient.sent_at %}{{ recipient.sent_at|date:"M d, Y H:i" }}{% else %}-{% endif %}</td>
+                        {% if campaign.is_document_campaign %}
+                        <td class="text-end">
+                            {% if recipient.document_file %}
+                                <a href="{% url 'emails:recipient_document' recipient.id %}" target="_blank" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1"><i data-lucide="download"></i> Download</a>
+                            {% else %}
+                                <span class="text-secondary small">Not generated</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-secondary text-center my-4">No recipients added to this campaign yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if campaign.status == 'queued' or campaign.status == 'sending' %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const pollUrl = "{% url 'emails:campaign_status_api' campaign.id %}";
+
+        // Escape user-supplied text before injecting into innerHTML.
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.appendChild(document.createTextNode(str || ''));
+            return d.innerHTML;
+        }
+
+        // Build the status badge HTML for a single recipient row.
+        function statusBadgeHtml(status, errorMessage) {
+            switch (status) {
+                case 'sent':
+                    return '<span class="badge text-bg-success bg-opacity-10 text-success border border-success border-opacity-25">Sent</span>';
+                case 'failed':
+                    return `<span class="badge text-bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25" title="${escHtml(errorMessage)}">Failed</span>`
+                         + (errorMessage ? `<div class="text-danger small mt-1 text-truncate" style="max-width:250px;">${escHtml(errorMessage)}</div>` : '');
+                case 'sending':
+                    return '<span class="badge text-bg-info bg-opacity-10 text-info border border-info border-opacity-25">Sending</span>';
+                case 'retrying':
+                    return '<span class="badge text-bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">Retrying</span>';
+                default:
+                    return '<span class="badge text-bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">Pending</span>';
+            }
+        }
+
+        // Update every row in the Recipients Log table.
+        function updateRecipientRows(recipients) {
+            recipients.forEach(r => {
+                const row = document.querySelector(`tr[data-recipient-id="${r.id}"]`);
+                if (!row) return;
+
+                row.querySelector('.recipient-status-cell').innerHTML = statusBadgeHtml(r.status, r.error_message);
+
+                const openedCell = row.querySelector('.recipient-opened-cell');
+                if (r.opened_at) {
+                    openedCell.innerHTML = `<span class="text-success small"><i data-lucide="eye" class="me-1"></i>${escHtml(r.opened_at)}</span>`;
+                } else if (r.status === 'sent') {
+                    openedCell.innerHTML = '<span class="text-secondary small"><i data-lucide="eye-off" class="me-1"></i>Unread</span>';
+                } else {
+                    openedCell.innerHTML = '<span class="text-secondary small">-</span>';
+                }
+
+                row.querySelector('.recipient-retries-cell').textContent = r.retry_count;
+                row.querySelector('.recipient-sent-cell').textContent = r.sent_at || '-';
+            });
+            if (window.lucide) lucide.createIcons();
+        }
+
+        const intervalId = setInterval(() => {
+            fetch(pollUrl)
+                .then(res => res.json())
+                .then(data => {
+                    // ── Stat cards ──────────────────────────────────────────
+                    document.getElementById('campaign-sent-count').innerText = `${data.sent} / ${data.total}`;
+                    document.getElementById('campaign-failed-count').innerText = data.failed;
+                    document.getElementById('progress-percentage-text').innerText = `${data.progress}%`;
+
+                    const progressBar = document.getElementById('progress-bar-el');
+                    progressBar.style.width = `${data.progress}%`;
+                    progressBar.setAttribute('aria-valuenow', data.progress);
+
+                    // ── Campaign status label ───────────────────────────────
+                    const statusTextEl = document.getElementById('campaign-status-text');
+                    let statusHtml = '';
+                    if (data.status === 'completed') {
+                        statusHtml = '<span class="text-success"><i data-lucide="check-check" class="me-1"></i>Completed</span>';
+                        progressBar.className = 'progress-bar bg-success';
+                        clearInterval(intervalId);
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else if (data.status === 'sending') {
+                        statusHtml = '<span class="text-info"><i data-lucide="refresh-cw" class="spin me-1"></i>Sending</span>';
+                        progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+                    } else if (data.status === 'queued') {
+                        statusHtml = '<span class="text-warning"><i data-lucide="hourglass" class="me-1"></i>Queued</span>';
+                        progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-warning';
+                    } else if (data.status === 'failed') {
+                        statusHtml = '<span class="text-danger"><i data-lucide="triangle-alert" class="me-1"></i>Failed</span>';
+                        progressBar.className = 'progress-bar bg-danger';
+                        clearInterval(intervalId);
+                    } else if (data.status === 'cancelled') {
+                        statusHtml = '<span class="text-secondary"><i data-lucide="ban" class="me-1"></i>Cancelled</span>';
+                        progressBar.className = 'progress-bar bg-secondary';
+                        clearInterval(intervalId);
+                    } else {
+                        statusHtml = `<span class="text-secondary">${escHtml(data.status)}</span>`;
+                    }
+                    statusTextEl.innerHTML = statusHtml;
+
+                    // ── Recipients Log table ────────────────────────────────
+                    if (data.recipients && data.recipients.length) {
+                        updateRecipientRows(data.recipients);
+                    }
+                })
+                .catch(err => console.error('Error polling campaign stats:', err));
+        }, 3000);
+    });
+</script>
+{% endif %}
+{% endblock %}

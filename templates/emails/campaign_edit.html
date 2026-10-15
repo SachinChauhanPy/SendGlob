@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Campaign - SendGlob{% endblock %}
+
+{% block content %}
+<div class="col-12 col-lg-10 mx-auto animated-fade-in">
+    <a href="{% url 'emails:campaign_detail' campaign.id %}" class="btn btn-sm btn-link text-secondary text-decoration-none ps-0 mb-2">
+        <i data-lucide="arrow-left" class="me-1"></i> Back to Campaign Detail
+    </a>
+    
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 fw-bold font-display m-0">Edit Campaign: {{ campaign.name }}</h1>
+            <p class="text-secondary mb-0">
+                Current Status: 
+                {% if campaign.status == 'draft' %}
+                    <span class="badge text-bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">Draft</span>
+                {% elif campaign.status == 'completed' %}
+                    <span class="badge text-bg-success bg-opacity-10 text-success border border-success border-opacity-25">Completed</span>
+                {% elif campaign.status == 'failed' %}
+                    <span class="badge text-bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Failed</span>
+                {% elif campaign.status == 'cancelled' %}
+                    <span class="badge text-bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">Cancelled</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if campaign.status != 'draft' %}
+    <div class="alert alert-info border-0 rounded-4 d-flex align-items-start mb-4 shadow-sm">
+        <i data-lucide="info" class="fs-5 me-3 mt-1 text-info"></i>
+        <div>
+            <h6 class="fw-bold mb-1">Limited Edits Mode</h6>
+            <p class="small mb-0 text-secondary">
+                This campaign has already run or been processed. To protect historical reports and delivery integrity, 
+                you can only edit the <strong>Campaign Name</strong> and <strong>SMTP Configuration</strong>. 
+                Recipients, templates, and attachments are locked.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger border-0 small py-2">
+                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Settings -->
+                <h2 class="h6 fw-bold font-display text-primary border-bottom pb-2 mb-3">
+                    <i data-lucide="settings" class="me-2"></i>Campaign Settings
+                </h2>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="{{ form.name.id_for_label }}" class="form-label small fw-semibold">Campaign Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="{{ form.smtp_config.id_for_label }}" class="form-label small fw-semibold">Sending SMTP Account</label>
+                        {{ form.smtp_config }}
+                        <div class="form-text small">Emails will be sent from this account.</div>
+                        {% if form.smtp_config.errors %}<div class="text-danger small mt-1">{{ form.smtp_config.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.template.id_for_label }}" class="form-label small fw-semibold">Email Template</label>
+                        {{ form.template }}
+                        {% if campaign.status == 'draft' %}
+                        <div class="form-text small">Choose an HTML/Text template. <a href="{% url 'emails:template_create' %}" target="_blank" class="text-decoration-none">Create new <i data-lucide="external-link"></i></a></div>
+                        {% endif %}
+                        {% if form.template.errors %}<div class="text-danger small mt-1">{{ form.template.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    {% if form.document_template %}
+                    <div class="col-md-6">
+                        <label for="{{ form.document_template.id_for_label }}" class="form-label small fw-semibold">Document Template</label>
+                        {{ form.document_template }}
+                        {% if campaign.status == 'draft' %}
+                        <div class="form-text small text-warning">
+                            <i data-lucide="triangle-alert" class="me-1"></i> Changing this will delete previously generated documents and regenerate them.
+                        </div>
+                        {% endif %}
+                        {% if form.document_template.errors %}<div class="text-danger small mt-1">{{ form.document_template.errors.0 }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if campaign.status == 'draft' %}
+                <!-- Recipients Section -->
+                <h2 class="h6 fw-bold font-display text-success border-bottom pb-2 mb-3 mt-5">
+                    <i data-lucide="users" class="me-2"></i>Recipients Update
+                </h2>
+                
+                <div class="bg-body-tertiary p-4 rounded-4 mb-4 border border-secondary border-opacity-25">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">How would you like to handle new recipients?</label>
+                            <div class="recipient-handling-choices border rounded-3 p-3 bg-body">
+                                {% for radio in form.recipient_handling %}
+                                <div class="form-check mb-2 last-mb-0">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label small fw-medium" for="{{ radio.id_for_label }}">
+                                        {{ radio.choice_label }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.recipient_handling.errors %}<div class="text-danger small mt-1">{{ form.recipient_handling.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <label for="{{ form.quick_recipients.id_for_label }}" class="form-label small fw-semibold">Add Quick Recipients</label>
+                            {{ form.quick_recipients }}
+                            <div class="form-text small">Enter emails separated by commas, spaces, or newlines.</div>
+                            {% if form.quick_recipients.errors %}<div class="text-danger small mt-1">{{ form.quick_recipients.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <label for="{{ form.csv_file.id_for_label }}" class="form-label small fw-semibold">Upload CSV File</label>
+                            {{ form.csv_file }}
+                            <div class="form-text small">Upload a CSV containing <code>email</code> and <code>name</code> columns.</div>
+                            {% if form.csv_file.errors %}<div class="text-danger small mt-1">{{ form.csv_file.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attachments Section -->
+                <h2 class="h6 fw-bold font-display text-secondary border-bottom pb-2 mb-3 mt-5">
+                    <i data-lucide="paperclip" class="me-2"></i>Attachments
+                </h2>
+                
+                {% if attachments %}
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold text-secondary mb-2">Existing Attachments</label>
+                    <div class="list-group rounded-4 shadow-sm border-0">
+                        {% for attachment in attachments %}
+                        <div class="list-group-item border-secondary border-opacity-10 d-flex align-items-center justify-content-between p-3">
+                            <div class="d-flex align-items-center">
+                                <i data-lucide="file-text" class="text-danger fs-5 me-3"></i>
+                                <div>
+                                    <span class="small fw-semibold text-body">{{ attachment.filename }}</span>
+                                    <span class="text-muted small ms-2">({{ attachment.file.size|filesizeformat }})</span>
+                                </div>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="delete_attachments" value="{{ attachment.id }}" id="delete_attach_{{ attachment.id }}" class="form-check-input border-danger">
+                                <label class="form-check-label text-danger small fw-semibold" for="delete_attach_{{ attachment.id }}">
+                                    Delete on Save
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="attachments" class="form-label small fw-semibold">Add New Attachments</label>
+                        <input type="file" name="attachments" id="attachments" class="form-control" multiple>
+                        <div class="form-text small">Select files to attach to all emails. These will be added alongside existing non-deleted attachments.</div>
+                    </div>
+                </div>
+
+                <!-- Scheduling -->
+                <h2 class="h6 fw-bold font-display text-info border-bottom pb-2 mb-3 mt-5">
+                    <i data-lucide="calendar-clock" class="me-2"></i>Scheduling
+                </h2>
+                {% include "emails/_schedule_fields.html" %}
+                {% endif %}
+
+                <div class="border-top mt-5 pt-4 text-end">
+                    <a href="{% url 'emails:campaign_detail' campaign.id %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

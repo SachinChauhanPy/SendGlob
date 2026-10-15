@@ -1,0 +1,78 @@
+{% extends "account/email/_base_email.html" %}
+
+{% block email_title %}Verify your email | SendGlob{% endblock %}
+
+{% block header_icon %}&#9993;{% endblock %}
+{% block header_title %}Verify your email address{% endblock %}
+
+{% block card_body %}
+<p style="margin:0 0 8px;color:#1e293b;font-size:16px;font-weight:600;">Almost there!</p>
+<p style="margin:0 0 20px;color:#4a5568;font-size:15px;line-height:1.7;">
+  Thanks for signing up for <strong style="color:#0078D4;">SendGlob</strong>. To activate your account
+  and start sending bulk campaigns from your own email, please confirm your email address.
+</p>
+
+<!-- CTA button -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
+  <tr>
+    <td align="center"
+        style="border-radius:10px;
+               background:linear-gradient(135deg,#0078D4 0%,#00A4EF 100%);
+               box-shadow:0 4px 14px rgba(0,120,212,0.35);">
+      <a href="{{ activate_url }}" target="_blank"
+         style="display:inline-block;padding:14px 40px;font-size:15px;font-weight:700;
+                color:#ffffff;text-decoration:none;border-radius:10px;
+                letter-spacing:0.2px;">
+        Verify my email
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p style="margin:0 0 8px;color:#718096;font-size:13px;line-height:1.6;">
+  Button not working? Copy and paste this link into your browser:
+</p>
+<p style="margin:0;font-size:12px;line-height:1.6;word-break:break-all;">
+  <a href="{{ activate_url }}" style="color:#0078D4;text-decoration:none;">{{ activate_url }}</a>
+</p>
+
+<!-- What you can do -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="margin-top:28px;border-top:1px solid #e8edf5;">
+  <tr>
+    <td style="padding-top:20px;">
+      <p style="margin:0 0 12px;color:#718096;font-size:13px;font-weight:600;
+                text-transform:uppercase;letter-spacing:0.06em;">
+        Once verified, you can
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td width="24" valign="top" style="padding:4px 8px 4px 0;font-size:14px;">&#9711;</td>
+          <td style="padding:4px 0;color:#4a5568;font-size:13px;line-height:1.5;">
+            Connect your SMTP account and send bulk campaigns
+          </td>
+        </tr>
+        <tr>
+          <td width="24" valign="top" style="padding:4px 8px 4px 0;font-size:14px;">&#9711;</td>
+          <td style="padding:4px 0;color:#4a5568;font-size:13px;line-height:1.5;">
+            Generate personalised certificate PDFs from a CSV
+          </td>
+        </tr>
+        <tr>
+          <td width="24" valign="top" style="padding:4px 8px 4px 0;font-size:14px;">&#9711;</td>
+          <td style="padding:4px 0;color:#4a5568;font-size:13px;line-height:1.5;">
+            Use AI to draft your email copy in seconds
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+{% endblock %}
+
+{% block card_note %}
+<p style="margin:0;color:#8a9ab5;font-size:12px;line-height:1.6;">
+  Didn't create an account? You can safely ignore this email. The link expires in
+  <strong>3 days</strong>.
+</p>
+{% endblock %}

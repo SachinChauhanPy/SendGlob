@@ -1,0 +1,22 @@
+{% extends "base_public.html" %}
+{% load static %}
+{% block title %}Pricing - SendGlob{% endblock %}
+{% block meta_description %}SendGlob pricing: free signup credits, pay-as-you-go credit packs, and monthly plans. Email delivery is free; credits are only spent on generated documents.{% endblock %}
+{% block og %}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SendGlob">
+<meta property="og:title" content="Pricing - SendGlob">
+<meta property="og:description" content="Free signup credits, pay-as-you-go packs, and monthly plans. Email delivery is free.">
+<meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/favicon-192.png' %}">
+{% endblock %}
+{% block public_content %}
+<div class="container py-5" style="max-width: 1000px;">
+    <div class="text-center mb-4">
+        <span class="section-eyebrow">Pricing</span>
+        <h1 class="section-headline mb-2">Honest pricing. No per-email fee.</h1>
+        <p class="text-secondary mb-0">Start free. Buy credits when your campaigns and document workflows need more room.</p>
+    </div>
+    {% include "partials/pricing_table.html" %}
+</div>
+{% endblock %}

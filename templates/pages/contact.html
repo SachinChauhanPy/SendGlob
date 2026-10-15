@@ -1,0 +1,89 @@
+{% extends "base_public.html" %}
+{% block title %}Contact - SendGlob{% endblock %}
+{% block meta_description %}Talk to a human at SendGlob. Questions about the product, billing, larger rollouts, or a security report: send a message and get a reply by email.{% endblock %}
+{% block public_content %}
+<div class="container py-5" style="max-width: 960px;">
+    <div class="row g-5">
+        <div class="col-12 col-lg-5">
+            <span class="section-eyebrow">Contact</span>
+            <h1 class="section-headline mb-3">Talk to a human</h1>
+            <p class="text-secondary mb-4">
+                Questions about the product, billing, or a larger rollout? Send a
+                message and you'll get a reply by email, from the person who builds
+                the product.
+            </p>
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex gap-3">
+                    <div class="trust-tile flex-shrink-0 d-flex align-items-center justify-content-center p-2" style="width:44px;height:44px;"><i data-lucide="mail"></i></div>
+                    <div>
+                        <div class="fw-semibold text-body small">Email</div>
+                        <a href="mailto:{{ contact_email }}" class="small">{{ contact_email }}</a>
+                    </div>
+                </div>
+                <div class="d-flex gap-3">
+                    <div class="trust-tile flex-shrink-0 d-flex align-items-center justify-content-center p-2" style="width:44px;height:44px;"><i data-lucide="clock"></i></div>
+                    <div>
+                        <div class="fw-semibold text-body small">Response time</div>
+                        <span class="small text-secondary">Usually within 1 to 3 business days</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-3">
+                    <div class="trust-tile flex-shrink-0 d-flex align-items-center justify-content-center p-2" style="width:44px;height:44px;"><i data-lucide="shield"></i></div>
+                    <div>
+                        <div class="fw-semibold text-body small">Security reports</div>
+                        <span class="small text-secondary">Mention "security" in the subject; these are read first. See the <a href="{% url 'pages:security' %}">security page</a>.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-7">
+            <div class="border rounded-4 p-4 bg-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger small">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.subject.id_for_label }}">Subject <span class="text-secondary">(optional)</span></label>
+                        {{ form.subject }}
+                        {% if form.subject.errors %}<div class="text-danger small mt-1">{{ form.subject.errors }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.message.id_for_label }}">Message</label>
+                        {{ form.message }}
+                        {% if form.message.errors %}<div class="text-danger small mt-1">{{ form.message.errors }}</div>{% endif %}
+                    </div>
+
+                    {# Honeypot: kept out of sight; bots that fill it are rejected server-side. #}
+                    <div class="d-none" aria-hidden="true">{{ form.website }}</div>
+
+                    <div class="mb-3">
+                        <div class="cf-turnstile" data-sitekey="{{ TURNSTILE_SITE_KEY }}"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary px-4 d-inline-flex align-items-center gap-2">
+                        Send message <i data-lucide="send"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endblock %}

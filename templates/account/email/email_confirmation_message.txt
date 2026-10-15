@@ -1,0 +1,11 @@
+Hi,
+
+Please confirm your email address {{ email }} for your emailOPS account on
+{{ current_site.domain }} by visiting the link below:
+
+{{ activate_url }}
+
+If you did not request this, you can safely ignore this email.
+
+The emailOPS Team
+https://emailops.in

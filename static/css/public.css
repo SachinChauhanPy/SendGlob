@@ -1,0 +1,165 @@
+/* ============================================================
+   Public site shell: marketing header, footer, section typography,
+   and the shared pricing cards. Used by base_public.html and the
+   landing page so every public-facing page shares one identity.
+
+   Rules here are theme-aware: colors come from Bootstrap CSS vars
+   or carry an explicit [data-bs-theme="dark"] override.
+   ============================================================ */
+
+/* Sticky brand-gradient top nav (matches the MS-Store blue palette
+   used across the app). White text + a frosted CTA stay readable
+   across the whole gradient surface. */
+.landing-nav {
+    position: sticky; top: 0; z-index: 50;
+    background:
+        radial-gradient(ellipse at 80% 50%, rgba(255,255,255,0.10), transparent 50%),
+        linear-gradient(135deg, #0078D4 0%, #00A4EF 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 4px 24px rgba(0, 60, 150, 0.15);
+}
+.landing-nav .brand-text { color: #fff !important; }
+.landing-nav .nav-anchor {
+    color: rgba(255,255,255,0.85) !important;
+    transition: color .15s ease;
+}
+.landing-nav .nav-anchor:hover { color: #fff !important; }
+.landing-nav .btn-nav-signin {
+    color: rgba(255,255,255,0.92) !important;
+}
+.landing-nav .btn-nav-cta {
+    background: #fff;
+    color: #0078D4 !important;
+    border: 0;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0, 30, 80, 0.18);
+    transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.landing-nav .btn-nav-cta:hover {
+    background: #f4faff;
+    color: #005A9E !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 30, 80, 0.25);
+}
+
+/* Theme toggle inside the public nav. The base.html guest toggle sits
+   at z-index 5 and would be buried behind the sticky nav (z-index 50),
+   so public pages hide it and provide this one instead. */
+.landing-nav .theme-toggle {
+    color: rgba(255,255,255,0.85) !important;
+    border: 0;
+    border-radius: .375rem;
+    padding: .3rem .45rem;
+    line-height: 1;
+    background: transparent;
+    transition: background-color .15s ease, color .15s ease;
+}
+.landing-nav .theme-toggle:hover {
+    background: rgba(255,255,255,0.14) !important;
+    color: #fff !important;
+}
+.guest-theme-toggle-wrapper { display: none; }
+
+/* Footer ---------------------------------------------------- */
+.landing-footer {
+    background: #0b1220;
+    color: rgba(255,255,255,0.7);
+    padding: 3rem 0 1.5rem;
+}
+.landing-footer a { color: rgba(255,255,255,0.75); text-decoration: none; }
+.landing-footer a:hover { color: #fff; }
+[data-bs-theme="dark"] .landing-footer {
+    background: #07090f;
+    border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+/* Shared section typography ---------------------------------
+   Display type is Ubuntu: it is the only display font base.html
+   actually loads, and the rest of the app already uses it via
+   .font-display. (An earlier 'Outfit' reference was never loaded
+   and silently fell back; standardized here.) */
+.section-eyebrow {
+    display: inline-block;
+    font-size: .8rem; font-weight: 700;
+    color: #0078D4;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: .75rem;
+}
+.section-headline {
+    font-family: 'Ubuntu', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--bs-body-color);
+}
+
+/* Shared pricing cards ---------------------------------------
+   Rendered by partials/pricing_table.html on both the landing
+   page and /pricing/. */
+.price-card {
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 18px;
+    padding: 1.75rem 1.5rem;
+    height: 100%;
+    display: flex; flex-direction: column;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.price-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0, 120, 212, 0.45);
+    box-shadow: 0 16px 40px -18px rgba(0, 60, 150, 0.25);
+}
+.price-kicker {
+    font-size: .72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--bs-secondary-color);
+}
+.price-name {
+    font-family: 'Ubuntu', sans-serif;
+    font-weight: 700; font-size: 1.1rem;
+    color: var(--bs-body-color);
+}
+.price-amount {
+    font-family: 'Ubuntu', sans-serif;
+    font-weight: 700; font-size: 2.1rem; line-height: 1.1;
+    color: var(--bs-body-color);
+}
+.price-amount .unit {
+    font-size: .95rem; font-weight: 500;
+    color: var(--bs-secondary-color);
+}
+.price-features { list-style: none; padding: 0; margin: 0; }
+.price-features li {
+    display: flex; align-items: flex-start; gap: .5rem;
+    padding: .32rem 0;
+    font-size: .9rem;
+    color: var(--bs-body-color);
+}
+.price-features li svg {
+    color: #7FBA00; width: 16px; height: 16px;
+    margin-top: .25rem; flex-shrink: 0;
+}
+
+/* Trust tiles (security band on the landing page, reused on the
+   security page grid) */
+.trust-tile {
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 14px;
+    padding: 1.25rem;
+    height: 100%;
+}
+.trust-tile .icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(0, 120, 212, 0.08);
+    color: #0078D4;
+    margin-bottom: .75rem;
+}
+[data-bs-theme="dark"] .trust-tile .icon {
+    background: rgba(0, 120, 212, 0.18);
+}

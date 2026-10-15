@@ -1,0 +1,94 @@
+{% extends "opsconsole/base_ops.html" %}
+{% block title %}{{ target.email }} - Ops Console{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h4 fw-bold m-0">{{ target.email }}</h1>
+    <a href="{% url 'opsconsole:users' %}" class="small">&larr; All users</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card bg-body border-secondary mb-3">
+            <div class="card-header bg-body-tertiary fw-semibold">Account</div>
+            <div class="card-body small">
+                <div class="d-flex justify-content-between py-1"><span class="text-secondary">Status</span>{% if target.is_active %}<span class="badge text-bg-success">active</span>{% else %}<span class="badge text-bg-danger">suspended</span>{% endif %}</div>
+                <div class="d-flex justify-content-between py-1"><span class="text-secondary">Staff</span><span class="text-body">{{ target.is_staff|yesno:"yes,no" }}</span></div>
+                <div class="d-flex justify-content-between py-1"><span class="text-secondary">Joined</span><span class="text-body">{{ target.date_joined|date:"M j, Y" }}</span></div>
+                <div class="d-flex justify-content-between py-1"><span class="text-secondary">Credits</span><span class="fw-bold text-body">{{ wallet.balance }}</span></div>
+            </div>
+        </div>
+
+        <div class="card bg-body border-secondary">
+            <div class="card-header bg-body-tertiary fw-semibold">Actions</div>
+            <div class="card-body">
+                <form method="post" action="{% url 'opsconsole:grant_credits' target.pk %}" class="mb-3">
+                    {% csrf_token %}
+                    <label class="form-label small text-secondary mb-1">Grant / adjust credits</label>
+                    <div class="input-group input-group-sm mb-2">
+                        <input class="form-control bg-body text-body border-secondary" type="number" name="amount" placeholder="e.g. 50 or -10" required>
+                        <button class="btn btn-outline-primary" type="submit">Apply</button>
+                    </div>
+                    <input class="form-control form-control-sm bg-body text-body border-secondary" name="reason" placeholder="Reason (required)" required>
+                </form>
+
+                <form method="post" action="{% url 'opsconsole:set_user_active' target.pk %}" class="mb-3"
+                      onsubmit="return confirm('Change this user\'s active status?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="active" value="{% if target.is_active %}off{% else %}on{% endif %}">
+                    <input class="form-control form-control-sm mb-2 bg-body text-body border-secondary" name="reason" placeholder="Reason (required)" required>
+                    <button class="btn btn-sm {% if target.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %} w-100" type="submit">
+                        {% if target.is_active %}Suspend user{% else %}Reactivate user{% endif %}
+                    </button>
+                </form>
+
+                <form method="post" action="{% url 'opsconsole:force_logout' target.pk %}" class="mb-3">
+                    {% csrf_token %}
+                    <input class="form-control form-control-sm mb-2 bg-body text-body border-secondary" name="reason" placeholder="Reason (optional)">
+                    <button class="btn btn-sm btn-outline-secondary w-100" type="submit">Force logout</button>
+                </form>
+
+                {% if not target.is_staff %}
+                <form method="post" action="{% url 'opsconsole:impersonate_start' target.pk %}"
+                      onsubmit="return confirm('Start a read-only impersonation session?');">
+                    {% csrf_token %}
+                    <input class="form-control form-control-sm mb-2 bg-body text-body border-secondary" name="reason" placeholder="Reason (optional)">
+                    <button class="btn btn-sm btn-outline-warning w-100" type="submit">View as user (read-only)</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card bg-body border-secondary mb-3">
+            <div class="card-header bg-body-tertiary fw-semibold">Credit ledger</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead><tr class="text-secondary small"><th class="bg-body">When</th><th class="bg-body">Kind</th><th class="bg-body">Amount</th><th class="bg-body">Balance</th><th class="bg-body">Reason</th></tr></thead>
+                    <tbody>
+                        {% for t in ledger %}
+                        <tr><td class="bg-body small text-body">{{ t.created_at|date:"M j, H:i" }}</td><td class="bg-body small">{{ t.get_transaction_type_display }}</td><td class="bg-body small {% if t.amount < 0 %}text-danger{% else %}text-success{% endif %}">{{ t.amount }}</td><td class="bg-body small text-body">{{ t.balance_after }}</td><td class="bg-body small text-secondary">{{ t.note|default:"-" }}</td></tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="bg-body text-secondary text-center py-3 small">No transactions.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card bg-body border-secondary">
+            <div class="card-header bg-body-tertiary fw-semibold">Campaigns</div>
+            <ul class="list-group list-group-flush">
+                {% for c in campaigns %}
+                <li class="list-group-item bg-body d-flex justify-content-between small">
+                    <a href="{% url 'opsconsole:campaign_detail' c.pk %}">{{ c.name }}</a>
+                    <span><span class="badge text-bg-secondary">{{ c.get_status_display }}</span>{% if c.deleted_at %} <span class="badge text-bg-danger">deleted</span>{% endif %}</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item bg-body text-secondary small">No campaigns.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

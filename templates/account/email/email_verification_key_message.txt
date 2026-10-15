@@ -1,0 +1,13 @@
+Hello,
+
+Thank you for registering with emailOPS!
+
+Please verify your email address by visiting the link below to activate your account and start automating your bulk campaigns:
+
+{{ activate_url }}
+
+If you did not create an account on our platform, please ignore this message.
+
+Best regards,
+The emailOPS Team
+https://emailops.com

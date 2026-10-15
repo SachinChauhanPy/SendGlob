@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today's Attention Dashboard</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f0f2f8;
+  color: #1c1c2e;
+  padding: 20px 20px 40px;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header-left h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1c1c2e;
+  letter-spacing: -0.3px;
+}
+.header-left .subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 3px;
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid #e2e5ef;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.refresh-btn:hover { background: #f9fafb; border-color: #c9cfe0; }
+.refresh-btn svg { width: 14px; height: 14px; }
+.refresh-btn.loading svg { animation: spin 0.8s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Summary bar */
+.summary-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.summary-card {
+  background: #fff;
+  border: 1px solid #e2e5ef;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.summary-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.summary-icon.drive  { background: #eef2ff; }
+.summary-icon.shared { background: #fef3c7; }
+.summary-icon.recent { background: #d1fae5; }
+.summary-text .count { font-size: 22px; font-weight: 700; line-height: 1; }
+.summary-text .label { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+/* Sections */
+.section { margin-bottom: 28px; }
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.section-header h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.section-badge {
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+.section-badge.amber { background: #fef3c7; color: #92400e; }
+.section-badge.green { background: #d1fae5; color: #065f46; }
+.section-badge.blue  { background: #dbeafe; color: #1e40af; }
+
+/* File cards grid */
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.file-card {
+  background: #fff;
+  border: 1px solid #e2e5ef;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+.file-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border-color: #c9cfe0;
+}
+
+.file-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.file-icon.doc    { background: #dbeafe; }
+.file-icon.sheet  { background: #d1fae5; }
+.file-icon.folder { background: #fef3c7; }
+.file-icon.pdf    { background: #fee2e2; }
+.file-icon.form   { background: #f3e8ff; }
+.file-icon.other  { background: #f3f4f6; }
+
+.file-info { flex: 1; min-width: 0; }
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1c1c2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-meta {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.file-meta .owner-tag {
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.open-btn {
+  padding: 5px 10px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  display: inline-block;
+}
+.open-btn:hover { background: #e5e7eb; }
+
+.age-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.age-dot.today   { background: #10b981; }
+.age-dot.week    { background: #f59e0b; }
+.age-dot.older   { background: #d1d5db; }
+
+/* Loading / empty states */
+.loading-state, .empty-state {
+  padding: 28px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  background: #fff;
+  border: 1px solid #e2e5ef;
+  border-radius: 10px;
+}
+.loading-dots::after {
+  content: '';
+  animation: dots 1.2s steps(3, end) infinite;
+}
+@keyframes dots {
+  0%   { content: ''; }
+  33%  { content: '.'; }
+  66%  { content: '..'; }
+  100% { content: '...'; }
+}
+
+/* Last updated */
+.last-updated {
+  text-align: right;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-bottom: 20px;
+}
+
+/* Error state */
+.error-state {
+  padding: 14px 16px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #92400e;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>🎯 Today's Attention</h1>
+    <div class="subtitle" id="today-date">Loading…</div>
+  </div>
+  <button class="refresh-btn" id="refresh-btn" onclick="loadAll()">
+    <svg id="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 4 23 10 17 10"></polyline>
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+    </svg>
+    Refresh
+  </button>
+</div>
+
+<div class="last-updated" id="last-updated"></div>
+
+<!-- Summary cards -->
+<div class="summary-bar">
+  <div class="summary-card">
+    <div class="summary-icon drive">📂</div>
+    <div class="summary-text">
+      <div class="count" id="count-recent">-</div>
+      <div class="label">Recent Files</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-icon shared">🔔</div>
+    <div class="summary-text">
+      <div class="count" id="count-shared">-</div>
+      <div class="label">Shared with Me</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-icon recent">✏️</div>
+    <div class="summary-text">
+      <div class="count" id="count-modified">-</div>
+      <div class="label">Modified This Week</div>
+    </div>
+  </div>
+</div>
+
+<!-- Shared with me -->
+<div class="section">
+  <div class="section-header">
+    <h2>Shared With Me</h2>
+    <span class="section-badge amber" id="badge-shared">…</span>
+  </div>
+  <div class="cards-grid" id="shared-list">
+    <div class="loading-state"><span class="loading-dots">Loading</span></div>
+  </div>
+</div>
+
+<!-- Recent activity -->
+<div class="section">
+  <div class="section-header">
+    <h2>Recent Activity</h2>
+    <span class="section-badge blue" id="badge-recent">…</span>
+  </div>
+  <div class="cards-grid" id="recent-list">
+    <div class="loading-state"><span class="loading-dots">Loading</span></div>
+  </div>
+</div>
+
+<script>
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7)  return `${diffDays}d ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays/7)}w ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays/30)}mo ago`;
+  return `${Math.floor(diffDays/365)}y ago`;
+}
+
+function ageDotClass(iso) {
+  if (!iso) return 'older';
+  const diffDays = (new Date() - new Date(iso)) / 86400000;
+  if (diffDays < 1)  return 'today';
+  if (diffDays < 7)  return 'week';
+  return 'older';
+}
+
+function mimeIcon(mime) {
+  if (!mime) return { icon: '📄', cls: 'other' };
+  if (mime.includes('spreadsheet') || mime.includes('sheet')) return { icon: '📊', cls: 'sheet' };
+  if (mime.includes('document') || mime.includes('word'))      return { icon: '📝', cls: 'doc' };
+  if (mime.includes('folder'))                                  return { icon: '📁', cls: 'folder' };
+  if (mime.includes('pdf'))                                     return { icon: '📋', cls: 'pdf' };
+  if (mime.includes('form'))                                    return { icon: '📋', cls: 'form' };
+  if (mime.includes('presentation') || mime.includes('pptx'))  return { icon: '🖼️', cls: 'doc' };
+  return { icon: '📄', cls: 'other' };
+}
+
+function shortOwner(email) {
+  if (!email) return '';
+  const name = email.split('@')[0];
+  return name.length > 18 ? name.slice(0, 16) + '…' : name;
+}
+
+function renderFileCard(file) {
+  const { icon, cls } = mimeIcon(file.mimeType);
+  const dot = ageDotClass(file.modifiedTime || file.viewedByMeTime);
+  const modified = file.modifiedTime || file.viewedByMeTime || file.sharedWithMeTime;
+  const ownerEmail = (file.owner || '');
+  const ownerDisplay = ownerEmail !== 'sachinchauhan.py@gmail.com' && ownerEmail !== 'devlopersachin007@gmail.com'
+    ? `<span class="owner-tag">from ${shortOwner(ownerEmail)}</span>` : '';
+  return `
+    <div class="file-card">
+      <div class="file-icon ${cls}">${icon}</div>
+      <div class="file-info">
+        <div class="file-name" title="${escHtml(file.title || '')}">${escHtml(file.title || 'Untitled')}</div>
+        <div class="file-meta">
+          <span class="age-dot ${dot}"></span>
+          <span>${formatDate(modified)}</span>
+          ${ownerDisplay}
+        </div>
+      </div>
+      <div class="file-actions">
+        ${file.viewUrl ? `<a class="open-btn" href="${file.viewUrl}" target="_blank">Open →</a>` : ''}
+      </div>
+    </div>`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('refresh-btn');
+  const icon = document.getElementById('refresh-icon');
+  if (on) { btn.classList.add('loading'); btn.disabled = true; }
+  else    { btn.classList.remove('loading'); btn.disabled = false; }
+}
+
+// ─── Data loaders ──────────────────────────────────────────────────────────────
+
+async function loadRecent() {
+  const list = document.getElementById('recent-list');
+  try {
+    const result = await window.cowork.callMcpTool(
+      'mcp__de8658f7-cde6-4ca1-868c-98e0b7dafca7__list_recent_files',
+      { pageSize: 20, orderBy: 'recency', excludeContentSnippets: true }
+    );
+
+    let files = [];
+    if (result && result.files) files = result.files;
+    else if (typeof result === 'string') {
+      try { const p = JSON.parse(result); files = p.files || []; } catch(e) {}
+    }
+
+    // Count modified this week
+    const now = new Date();
+    const thisWeek = files.filter(f => {
+      const d = new Date(f.modifiedTime || f.viewedByMeTime || '');
+      return (now - d) < 7 * 86400000;
+    });
+
+    document.getElementById('count-recent').textContent = files.length;
+    document.getElementById('count-modified').textContent = thisWeek.length;
+    document.getElementById('badge-recent').textContent = `${files.length} files`;
+
+    if (!files.length) {
+      list.innerHTML = '<div class="empty-state">No recent files found.</div>';
+      return;
+    }
+
+    list.innerHTML = files.slice(0, 12).map(renderFileCard).join('');
+  } catch (e) {
+    list.innerHTML = `<div class="error-state">⚠️ Could not load recent files: ${escHtml(String(e.message || e))}</div>`;
+  }
+}
+
+async function loadShared() {
+  const list = document.getElementById('shared-list');
+  try {
+    const result = await window.cowork.callMcpTool(
+      'mcp__de8658f7-cde6-4ca1-868c-98e0b7dafca7__search_files',
+      { query: "sharedWithMe = true", pageSize: 12, excludeContentSnippets: true }
+    );
+
+    let files = [];
+    if (result && result.files) files = result.files;
+    else if (typeof result === 'string') {
+      try { const p = JSON.parse(result); files = p.files || []; } catch(e) {}
+    }
+
+    // Sort by sharedWithMeTime desc
+    files.sort((a, b) => new Date(b.sharedWithMeTime || 0) - new Date(a.sharedWithMeTime || 0));
+
+    document.getElementById('count-shared').textContent = files.length;
+    document.getElementById('badge-shared').textContent = `${files.length} items`;
+
+    if (!files.length) {
+      list.innerHTML = '<div class="empty-state">Nothing shared with you right now.</div>';
+      return;
+    }
+
+    list.innerHTML = files.map(renderFileCard).join('');
+  } catch (e) {
+    list.innerHTML = `<div class="error-state">⚠️ Could not load shared files: ${escHtml(String(e.message || e))}</div>`;
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+async function loadAll() {
+  setLoading(true);
+
+  // Set today's date header
+  const today = new Date();
+  document.getElementById('today-date').textContent =
+    today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  await Promise.all([loadRecent(), loadShared()]);
+
+  document.getElementById('last-updated').textContent =
+    'Last updated: ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  setLoading(false);
+}
+
+loadAll();
+</script>
+</body>
+</html>

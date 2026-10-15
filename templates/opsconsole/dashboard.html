@@ -1,0 +1,103 @@
+{% extends "opsconsole/base_ops.html" %}
+{% block title %}Dashboard - Ops Console{% endblock %}
+
+{% block content %}
+<h1 class="h4 fw-bold mb-4">Operations dashboard</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card ops-tile bg-body border-secondary h-100">
+            <div class="card-body">
+                <div class="text-secondary small text-uppercase">Sent today</div>
+                <div class="fs-3 fw-bold text-body">{{ counts.emails_sent_today }}</div>
+                <div class="small text-danger">{{ counts.emails_failed_today }} failed</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card ops-tile bg-body border-secondary h-100">
+            <div class="card-body">
+                <div class="text-secondary small text-uppercase">Documents today</div>
+                <div class="fs-3 fw-bold text-body">{{ counts.documents_today }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card ops-tile bg-body border-secondary h-100">
+            <div class="card-body">
+                <div class="text-secondary small text-uppercase">Signups today</div>
+                <div class="fs-3 fw-bold text-body">{{ counts.signups_today }}</div>
+                <div class="small text-secondary">{{ counts.total_users }} total</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card ops-tile bg-body border-secondary h-100">
+            <div class="card-body">
+                <div class="text-secondary small text-uppercase">Active campaigns</div>
+                <div class="fs-3 fw-bold text-body">{{ counts.active_campaigns }}</div>
+                <div class="small text-secondary">queued / sending / scheduled</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card bg-body border-secondary h-100">
+            <div class="card-header bg-body-tertiary fw-semibold">Infrastructure</div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-secondary">Celery worker</span>
+                    {% if workers.ok %}
+                        <span class="badge text-bg-success">{{ workers.count }} online</span>
+                    {% else %}
+                        <span class="badge text-bg-danger">offline</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-secondary">Redis broker</span>
+                    {% if broker.ok %}
+                        <span class="badge text-bg-success">reachable</span>
+                    {% else %}
+                        <span class="badge text-bg-danger">unreachable</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-secondary">Task failure rate (24h)</span>
+                    <span class="badge {% if tasks.failure_rate > 10 %}text-bg-danger{% elif tasks.failure_rate > 0 %}text-bg-warning{% else %}text-bg-success{% endif %}">
+                        {{ tasks.failure_rate }}%
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-secondary">Tasks run (24h)</span>
+                    <span class="text-body">{{ tasks.total }}</span>
+                </div>
+                <a href="{% url 'opsconsole:health' %}" class="small">View system health &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card bg-body border-secondary h-100">
+            <div class="card-header bg-body-tertiary fw-semibold d-flex justify-content-between">
+                <span>Recent activity</span>
+                <a href="{% url 'opsconsole:activity' %}" class="small">All &rarr;</a>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for item in feed %}
+                <li class="list-group-item bg-body d-flex gap-2 align-items-start">
+                    <i data-lucide="{{ item.icon }}" class="text-secondary mt-1" style="width:16px;height:16px;"></i>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="text-body small">{{ item.summary }}</div>
+                        <div class="text-secondary" style="font-size:.75rem;">{{ item.when|date:"M j, H:i" }}{% if item.actor %} &middot; {{ item.actor }}{% endif %}</div>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="list-group-item bg-body text-secondary small">No activity yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
