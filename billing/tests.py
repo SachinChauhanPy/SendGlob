@@ -555,6 +555,31 @@ class BillingUIRenderTests(TestCase):
         self.assertIsNotNone(sub.current_period_end)
         self.assertEqual(gating.get_tier(self.user)[0], 'Creator')
 
+    @override_settings(RAZORPAY_KEY_ID='rzp_test_x', RAZORPAY_KEY_SECRET='sek')
+    def test_checkout_plan_links_gateway_plan_on_first_use(self):
+        with mock.patch('billing.gateway.is_live', return_value=True), \
+             mock.patch('billing.gateway.create_plan', return_value='plan_auto') as create, \
+             mock.patch('billing.gateway.create_subscription',
+                        side_effect=[{'id': 'sub_auto'}, {'id': 'sub_auto2'}]) as create_sub:
+            resp = self.client.post(reverse('billing:checkout_plan', args=[self.plan.pk]))
+            self.client.post(reverse('billing:checkout_plan', args=[self.plan.pk]))
+        self.assertEqual(resp.status_code, 200)
+        create.assert_called_once()  # linked once, reused afterwards
+        self.assertEqual(create_sub.call_args[0][0], 'plan_auto')
+        self.plan.refresh_from_db()
+        self.assertEqual(self.plan.razorpay_plan_id, 'plan_auto')
+        self.assertEqual(Subscription.objects.get(razorpay_subscription_id='sub_auto').gateway_plan_id,
+                         'plan_auto')
+
+    @override_settings(RAZORPAY_KEY_ID='rzp_test_x', RAZORPAY_KEY_SECRET='sek')
+    def test_checkout_plan_reports_unavailable_plan_accurately(self):
+        from billing import gateway
+        with mock.patch('billing.gateway.is_live', return_value=True), \
+             mock.patch('billing.gateway.create_plan', side_effect=gateway.GatewayError('401')):
+            resp = self.client.post(reverse('billing:checkout_plan', args=[self.plan.pk]), follow=True)
+        self.assertContains(resp, 'cannot be purchased online right now')
+        self.assertFalse(Subscription.objects.filter(user=self.user).exists())
+
     def test_checkout_other_plan_blocked_while_subscribed(self):
         other = Plan.objects.create(tier='Business', price=1499, currency='INR')
         Subscription.objects.create(user=self.user, plan=self.plan, status=Subscription.ACTIVE)

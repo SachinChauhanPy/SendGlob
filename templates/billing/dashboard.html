@@ -25,7 +25,7 @@
     <div class="col-sm-4">
         <div class="card bg-body border-secondary h-100"><div class="card-body">
             <div class="text-secondary small text-uppercase">Plan</div>
-            <div class="fs-5 fw-bold text-body text-capitalize">{{ tier }}</div>
+            <div class="fs-5 fw-bold text-body">{% if tier == 'payg' %}Pay as you go{% elif tier == 'free' %}Free{% else %}{{ tier }}{% endif %}</div>
             {% if subscription %}<div class="small text-secondary">{% if subscription.cancel_at_period_end %}ends{% else %}renews{% endif %} {{ subscription.current_period_end|date:"M j, Y"|default:"-" }}</div>{% endif %}
         </div></div>
     </div>

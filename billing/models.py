@@ -8,7 +8,7 @@ soft-delete invariant). See docs/billing_accounting_profile_plan.md.
 import uuid
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 
 
 class BillingProfile(models.Model):
@@ -141,6 +141,22 @@ class Plan(models.Model):
         from . import gateway
         return gateway.create_plan(f"SendGlob {self.tier} ({self.get_billing_cycle_display()})",
                                    self.price, self.currency, self.billing_cycle)
+
+    def ensure_gateway_plan(self):
+        """Link a Razorpay plan on first use when the gateway is live and none is
+        linked yet (e.g. plans seeded before the keys were configured). The row
+        lock stops two concurrent checkouts creating two gateway plans. Returns
+        the id (blank in manual mode). Raises gateway.GatewayError."""
+        from . import gateway
+        if self.razorpay_plan_id or not gateway.is_live():
+            return self.razorpay_plan_id
+        with transaction.atomic():
+            locked = Plan.objects.select_for_update().get(pk=self.pk)
+            if not locked.razorpay_plan_id:
+                locked.razorpay_plan_id = locked.create_gateway_plan()
+                locked.save(update_fields=['razorpay_plan_id'])
+        self.razorpay_plan_id = locked.razorpay_plan_id
+        return self.razorpay_plan_id
 
 
 class SubscriptionQuerySet(models.QuerySet):

@@ -10,6 +10,14 @@ are kept (not deleted) and marked **Completed** with a resolution date.
 
 ## Open
 
+### [B-063] Dates and times render in UTC instead of the user's time zone
+- **Discovered**: 2026-10-15
+- **Area**: app-wide (`core/settings.py` `TIME_ZONE="UTC"`; no per-request `timezone.activate`)
+- **Severity**: Low - display only; stored values are correct
+- **Status**: Open
+
+Users have a `timezone` field (B-038), used when interpreting schedule input, but templates render every datetime in UTC (e.g. billing history shows 14:52 for a 20:22 IST purchase). Fix sketch: a small middleware that calls `timezone.activate(request.user.timezone)` for authenticated users, plus a check of places that format times in Python (`emails/views.py`, `emails/tasks.py`).
+
 ### [TD-B03] Receipts are not GST tax invoices
 - **Discovered**: 2026-10-15
 - **Area**: `billing/receipts.py`
@@ -21,6 +29,19 @@ Receipts carry `tax_rate`/`tax_amount`/`is_tax_invoice` fields but always issue 
 ---
 
 ## Closed / Resolved
+
+### [B-062] Plan checkout always failed in live mode with a misleading message
+- **Discovered**: 2026-10-15
+- **Resolved**: 2026-10-15
+- **Area**: `billing/views.py` (`checkout_plan`, `change_plan`), `billing/models.py`
+- **Severity**: **High** - no plan could be bought
+- **Status**: **Closed** (code); Razorpay account action still required
+
+Seeded plans had no `razorpay_plan_id`, so every live plan checkout raised `GatewayError` and told the user the provider "could not be reached". Linking was only done by the admin form or `sync_razorpay_plans`, which nobody had run. Separately, the configured Razorpay account returns 401 on `/v1/plans` and `/v1/subscriptions` (orders work): the Subscriptions product is not enabled on the account.
+
+**Resolution**: `Plan.ensure_gateway_plan()` links a Razorpay plan on first use (row-locked, created once) from checkout, plan switching and `sync_razorpay_plans`. Failure to link shows an accurate "this plan cannot be purchased online right now" message and is logged. Plans will work once Subscriptions is enabled in the Razorpay dashboard. Credit-pack checkout was verified end to end in test mode (order, callback, credits, history, receipt PDF).
+
+---
 
 ### [B-060] `test_standard_campaign_persists_schedule` fails since recurring scheduling became plan-gated
 - **Discovered**: 2026-10-15

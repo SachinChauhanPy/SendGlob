@@ -17,8 +17,7 @@ class Command(BaseCommand):
             return
         for plan in plans:
             try:
-                plan.razorpay_plan_id = plan.create_gateway_plan()
+                plan.ensure_gateway_plan()
             except gateway.GatewayError as exc:
                 raise CommandError(f"Failed on {plan.tier}: {exc}")
-            plan.save(update_fields=['razorpay_plan_id'])
             self.stdout.write(self.style.SUCCESS(f"Linked {plan.tier} -> {plan.razorpay_plan_id}"))

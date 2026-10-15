@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 
 GATEWAY_UNAVAILABLE = ('The payment provider could not be reached. No charge was made; '
                        'please try again in a few minutes.')
+PLAN_UNAVAILABLE = ('This plan cannot be purchased online right now. No charge was made; '
+                    'please try again later or contact support.')
 
 
 def _current_subscription(user):
@@ -111,6 +113,12 @@ def checkout_plan(request, pk):
                                    f"\"Switch\" below to move to {plan.tier} from your next renewal.")
         return redirect('billing:manage_subscription')
 
+    try:
+        plan.ensure_gateway_plan()
+    except gateway.GatewayError:
+        logger.exception('Could not link a Razorpay plan for plan %s', plan.pk)
+        messages.error(request, PLAN_UNAVAILABLE)
+        return redirect('billing:dashboard')
     try:
         gw_sub = gateway.create_subscription(
             plan.razorpay_plan_id, plan.billing_cycle,
@@ -220,6 +228,8 @@ def change_plan(request, pk):
         messages.error(request, 'That plan is not available as a switch from your current plan.')
         return redirect('billing:manage_subscription')
     try:
+        if not sub.is_manual:
+            plan.ensure_gateway_plan()
         gateway.schedule_plan_change(sub.razorpay_subscription_id, plan.razorpay_plan_id)
     except gateway.GatewayError:
         messages.error(request, 'We could not reach the payment provider. Nothing was changed; '
